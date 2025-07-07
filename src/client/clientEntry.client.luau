@@ -43,6 +43,10 @@ local function onCharacterAdded(character: Model)
 	})
 
 	local simulationConnection = RunService.PreSimulation:Connect(function(_dt)
+		if not wallstick:isEnabled() then
+			return
+		end
+
 		if wallstick:getFallDistance() < -50 then
 			wallstick:set(workspace.Terrain, Vector3.yAxis)
 			return

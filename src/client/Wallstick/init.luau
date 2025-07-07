@@ -80,6 +80,8 @@ function WallstickClass.new(options: Options): Wallstick
 	self.fallStartHeight = -1
 	self.replicateTick = -1
 
+	self.enabled = true
+
 	self.part = workspace.Terrain
 	self.normal = Vector3.yAxis
 
@@ -90,8 +92,8 @@ function WallstickClass.new(options: Options): Wallstick
 	self.geometry.Parent = self.options.parent
 	self.trove:Add(self.geometry)
 
-self.cachedCollisionGeometry = {}
-self.cachedTerrainGeometry = {}
+	self.cachedCollisionGeometry = {}
+	self.cachedTerrainGeometry = {}
 
 	self.real = CharacterHelper.real(Players.LocalPlayer)
 	self.fake = CharacterHelper.fake(Players.LocalPlayer)
@@ -113,6 +115,13 @@ self.cachedTerrainGeometry = {}
 			self.fallStartHeight = self.fake.rootPart.Position.Y
 		end
 	end))
+
+	local function onSeated(active: boolean)
+		self:setEnabled(not active)
+	end
+
+	self.trove:Add(self.real.humanoid.Seated:Connect(onSeated))
+	self.trove:Add(self.fake.humanoid.Seated:Connect(onSeated))
 
 	self.trove:Add(RunService.PostSimulation:Connect(function(dt)
 		self:_stepPhysics(dt)
@@ -172,133 +181,122 @@ function WallstickClass._getCalculatedRealRootCFrame(self: Wallstick)
 end
 
 function WallstickClass._updateCollisionGeometry(self: Wallstick)
-       local newCachedCollisionGeometry = {}
-       local newCachedTerrainGeometry = {}
+	local newCachedCollisionGeometry = {}
+	local newCachedTerrainGeometry = {}
 
-       local originCF = self:_getOriginCFrame()
-       local realRootCF = self.real.rootPart.CFrame
-       local stickCFInv = self.part.CFrame:Inverse()
+	local originCF = self:_getOriginCFrame()
+	local realRootCF = self.real.rootPart.CFrame
+	local stickCFInv = self.part.CFrame:Inverse()
 
 	local colliderBoxSizeHalf = Vector3.new(10, 10, 10)
 
        -- stylua: ignore
        -- selene: allow (deprecated)
        local params = OverlapParams.new()
-       params.FilterType = Enum.RaycastFilterType.Exclude
-       params.FilterDescendantsInstances = { self.real.character, self.options.parent } :: { Instance }
-       local parts = workspace:GetPartBoundsInBox(
-               CFrame.new(realRootCF.Position),
-               colliderBoxSizeHalf * 2,
-               params
-       ) :: { BasePart }
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { self.real.character, self.options.parent } :: { Instance }
+	local parts =
+		workspace:GetPartBoundsInBox(CFrame.new(realRootCF.Position), colliderBoxSizeHalf * 2, params) :: { BasePart }
 
-       local terrainHit = false
+	local terrainHit = false
 
-       for _, realPart in parts do
-               if realPart:IsA("Terrain") then
-                       terrainHit = true
-               else
-                       local collisionPart: BasePart
-                       local foundPart = self.cachedCollisionGeometry[realPart]
+	for _, realPart in parts do
+		if realPart:IsA("Terrain") then
+			terrainHit = true
+		else
+			local collisionPart: BasePart
+			local foundPart = self.cachedCollisionGeometry[realPart]
 
-                       if not foundPart then
-                               local properties = CLASS_NAMES_TO_CONVERT[realPart.ClassName] :: { [string]: any }
+			if not foundPart then
+				local properties = CLASS_NAMES_TO_CONVERT[realPart.ClassName] :: { [string]: any }
 
-                               if properties then
-                                       local convertedPart = Instance.new(properties.ClassName) :: any
-                                       for key, value in properties do
-                                               if key ~= "ClassName" then
-                                                       (convertedPart :: any)[key] = value
-                                               end
-                                       end
+				if properties then
+					local convertedPart = Instance.new(properties.ClassName) :: any
+					for key, value in properties do
+						if key ~= "ClassName" then
+							(convertedPart :: any)[key] = value
+						end
+					end
 
-                                       collisionPart = convertedPart :: BasePart
-                               else
-                                       collisionPart = realPart:Clone()
-                                       collisionPart.Name = "Part"
-                                       collisionPart:ClearAllChildren()
-                               end
+					collisionPart = convertedPart :: BasePart
+				else
+					collisionPart = realPart:Clone()
+					collisionPart.Name = "Part"
+					collisionPart:ClearAllChildren()
+				end
 
-                               collisionPart.CollisionGroup = "WallstickCollision"
-                               collisionPart.Parent = self.geometry
-                       else
-                               collisionPart = foundPart
-                       end
+				collisionPart.CollisionGroup = "WallstickCollision"
+				collisionPart.Parent = self.geometry
+			else
+				collisionPart = foundPart
+			end
 
-                       collisionPart.Anchored = true
-                       collisionPart.CastShadow = false
-                       collisionPart.AssemblyLinearVelocity = Vector3.zero
-                       collisionPart.AssemblyAngularVelocity = Vector3.zero
-                       collisionPart.CFrame = originCF * (stickCFInv * realPart.CFrame)
-                       collisionPart.Size = realPart.Size
-                       collisionPart.CanCollide = realPart.CanCollide
-                       collisionPart.Transparency = 1
+			collisionPart.Anchored = true
+			collisionPart.CastShadow = false
+			collisionPart.AssemblyLinearVelocity = Vector3.zero
+			collisionPart.AssemblyAngularVelocity = Vector3.zero
+			collisionPart.CFrame = originCF * (stickCFInv * realPart.CFrame)
+			collisionPart.Size = realPart.Size
+			collisionPart.CanCollide = realPart.CanCollide
+			collisionPart.Transparency = 1
 
-                       self.cachedCollisionGeometry[realPart] = collisionPart
-                       newCachedCollisionGeometry[realPart] = collisionPart
-               end
-       end
+			self.cachedCollisionGeometry[realPart] = collisionPart
+			newCachedCollisionGeometry[realPart] = collisionPart
+		end
+	end
 
-       if terrainHit then
-               local region = Region3.new(
-                       realRootCF.Position - colliderBoxSizeHalf,
-                       realRootCF.Position + colliderBoxSizeHalf
-               )
-               region = region:ExpandToGrid(4)
+	if terrainHit then
+		local region = Region3.new(realRootCF.Position - colliderBoxSizeHalf, realRootCF.Position + colliderBoxSizeHalf)
+		region = region:ExpandToGrid(4)
 
-               local materials, occupancies = workspace.Terrain:ReadVoxels(region, 4)
-               local cellSize = region.Size / materials.Size
+		local materials, occupancies = workspace.Terrain:ReadVoxels(region, 4)
+		local cellSize = region.Size / materials.Size
 
-               for x = 1, materials.Size.X do
-                       for y = 1, materials.Size.Y do
-                               for z = 1, materials.Size.Z do
-                                       if materials[x][y][z] ~= Enum.Material.Air and occupancies[x][y][z] > 0 then
-                                               local worldPos =
-                                                       region.CFrame.Position
-                                                       + Vector3.new(
-                                                               (x - 0.5) * cellSize.X,
-                                                               (y - 0.5) * cellSize.Y,
-                                                               (z - 0.5) * cellSize.Z
-                                                       )
-                                               local key = string.format("%d_%d_%d", x, y, z)
+		for x = 1, materials.Size.X do
+			for y = 1, materials.Size.Y do
+				for z = 1, materials.Size.Z do
+					if materials[x][y][z] ~= Enum.Material.Air and occupancies[x][y][z] > 0 then
+						local worldPos = region.CFrame.Position
+							+ Vector3.new((x - 0.5) * cellSize.X, (y - 0.5) * cellSize.Y, (z - 0.5) * cellSize.Z)
+						local key = string.format("%d_%d_%d", x, y, z)
 
-                                               local collisionPart = self.cachedTerrainGeometry[key]
-                                               if not collisionPart then
-                                                       collisionPart = Instance.new("Part")
-                                                       collisionPart.Size = cellSize
-                                                       collisionPart.CollisionGroup = "WallstickCollision"
-                                                       collisionPart.Parent = self.geometry
-                                               end
+						local collisionPart = self.cachedTerrainGeometry[key]
+						if not collisionPart then
+							collisionPart = Instance.new("Part")
+							collisionPart.Size = cellSize
+							collisionPart.CollisionGroup = "WallstickCollision"
+							collisionPart.Parent = self.geometry
+						end
 
-                                               collisionPart.Anchored = true
-                                               collisionPart.CastShadow = false
-                                               collisionPart.AssemblyLinearVelocity = Vector3.zero
-                                               collisionPart.AssemblyAngularVelocity = Vector3.zero
-                                               collisionPart.CFrame = originCF * (stickCFInv * CFrame.new(worldPos))
-                                               collisionPart.CanCollide = true
-                                               collisionPart.Transparency = 1
+						collisionPart.Anchored = true
+						collisionPart.CastShadow = false
+						collisionPart.AssemblyLinearVelocity = Vector3.zero
+						collisionPart.AssemblyAngularVelocity = Vector3.zero
+						collisionPart.CFrame = originCF * (stickCFInv * CFrame.new(worldPos))
+						collisionPart.CanCollide = true
+						collisionPart.Transparency = 1
 
-                                               self.cachedTerrainGeometry[key] = collisionPart
-                                               newCachedTerrainGeometry[key] = collisionPart
-                                       end
-                               end
-                       end
-               end
-       end
+						self.cachedTerrainGeometry[key] = collisionPart
+						newCachedTerrainGeometry[key] = collisionPart
+					end
+				end
+			end
+		end
+	end
 
-       for key, collisionPart in self.cachedTerrainGeometry do
-               if not newCachedTerrainGeometry[key] then
-                       self.cachedTerrainGeometry[key] = nil
-                       collisionPart:Destroy()
-               end
-       end
+	for key, collisionPart in self.cachedTerrainGeometry do
+		if not newCachedTerrainGeometry[key] then
+			self.cachedTerrainGeometry[key] = nil
+			collisionPart:Destroy()
+		end
+	end
 
-       for realPart, collisionPart in self.cachedCollisionGeometry do
-               if not newCachedCollisionGeometry[realPart] then
-                       self.cachedCollisionGeometry[realPart] = nil
-                       collisionPart:Destroy()
-               end
-       end
+	for realPart, collisionPart in self.cachedCollisionGeometry do
+		if not newCachedCollisionGeometry[realPart] then
+			self.cachedCollisionGeometry[realPart] = nil
+			collisionPart:Destroy()
+		end
+	end
 end
 
 function WallstickClass._trySendReplication(self: Wallstick, force: boolean)
@@ -355,6 +353,10 @@ function WallstickClass._stepPhysics(self: Wallstick, _dt: number)
 		return
 	end
 
+	if not self.enabled then
+		return
+	end
+
 	local realRootCFrame = self:_getCalculatedRealRootCFrame()
 
 	self.real.rootPart.CFrame = realRootCFrame
@@ -369,6 +371,24 @@ end
 
 function WallstickClass.getPart(self: Wallstick)
 	return self.part
+end
+
+function WallstickClass.isEnabled(self: Wallstick)
+	return self.enabled
+end
+
+function WallstickClass.setEnabled(self: Wallstick, enabled: boolean)
+	if self.enabled == enabled then
+		return
+	end
+
+	self.enabled = enabled
+	self.real.alignPosition.Enabled = enabled
+	self.real.alignOrientation.Enabled = enabled
+
+	if not enabled then
+		self.fake.alignOrientation.Enabled = false
+	end
 end
 
 function WallstickClass.getNormal(self: Wallstick, worldSpace: boolean)
