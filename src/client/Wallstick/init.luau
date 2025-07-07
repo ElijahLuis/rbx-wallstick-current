@@ -178,12 +178,16 @@ function WallstickClass._updateCollisionGeometry(self: Wallstick)
 
 	local colliderBoxSizeHalf = Vector3.new(10, 10, 10)
 
-	-- stylua: ignore
-	-- selene: allow (deprecated)
-	local parts = workspace:FindPartsInRegion3WithIgnoreList(Region3.new(
-		realRootCF.Position - colliderBoxSizeHalf,
-		realRootCF.Position + colliderBoxSizeHalf
-	), {self.real.character, self.options.parent} :: {Instance}, 1000) :: {BasePart}
+       -- stylua: ignore
+       -- selene: allow (deprecated)
+       local params = OverlapParams.new()
+       params.FilterType = Enum.RaycastFilterType.Exclude
+       params.FilterDescendantsInstances = { self.real.character, self.options.parent } :: { Instance }
+       local parts = workspace:GetPartBoundsInBox(
+               CFrame.new(realRootCF.Position),
+               colliderBoxSizeHalf * 2,
+               params
+       ) :: { BasePart }
 
 	for _, realPart in parts do
 		local collisionPart: BasePart
