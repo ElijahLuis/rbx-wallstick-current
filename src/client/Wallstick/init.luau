@@ -359,9 +359,8 @@ function WallstickClass._stepPhysics(self: Wallstick, _dt: number)
 
 	local realRootCFrame = self:_getCalculatedRealRootCFrame()
 
-	self.real.rootPart.CFrame = realRootCFrame
-	self.real.alignPosition.Position = realRootCFrame.Position
-	self.real.alignOrientation.CFrame = realRootCFrame
+       self.real.alignPosition.Position = realRootCFrame.Position
+       self.real.alignOrientation.CFrame = realRootCFrame
 
 	self:_updateCollisionGeometry()
 	self:_trySendReplication(false)
