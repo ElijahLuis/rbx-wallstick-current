@@ -15,5 +15,6 @@ local function run(cmd: string, args: {string})
 	end
 end
 
+run("selene", {"src", "tests"})
 run("rojo", {"build", "tests.project.json", "-o", "TestPlace.rbxl"})
 run("lune", {"test", "tests.project.json"})

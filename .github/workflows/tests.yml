@@ -28,7 +28,15 @@ jobs:
           unzip -q lune.zip -d lune
           sudo mv lune/lune /usr/local/bin/lune
           chmod +x /usr/local/bin/lune
+      - name: Install Selene
+        run: |
+          curl -L https://github.com/Kampfkarren/selene/releases/download/0.26.1/selene-0.26.1-linux.zip -o selene.zip
+          unzip -q selene.zip -d selene
+          sudo mv selene/selene /usr/local/bin/selene
+          chmod +x /usr/local/bin/selene
       - name: Install dependencies
         run: lune run lune/wally-install.luau
+      - name: Lint
+        run: selene src tests
       - name: Run tests
         run: lune run lune/run-tests.luau
