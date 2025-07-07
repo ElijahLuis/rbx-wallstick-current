@@ -61,6 +61,7 @@ export type Wallstick = typeof(setmetatable(
 
 		geometry: Folder,
 		cachedCollisionGeometry: { [BasePart]: BasePart },
+		cachedTerrainGeometry: { [string]: BasePart },
 
 		real: CharacterHelper.RealCharacter,
 		fake: CharacterHelper.FakeCharacter,
@@ -89,7 +90,8 @@ function WallstickClass.new(options: Options): Wallstick
 	self.geometry.Parent = self.options.parent
 	self.trove:Add(self.geometry)
 
-	self.cachedCollisionGeometry = {}
+self.cachedCollisionGeometry = {}
+self.cachedTerrainGeometry = {}
 
 	self.real = CharacterHelper.real(Players.LocalPlayer)
 	self.fake = CharacterHelper.fake(Players.LocalPlayer)
@@ -170,11 +172,12 @@ function WallstickClass._getCalculatedRealRootCFrame(self: Wallstick)
 end
 
 function WallstickClass._updateCollisionGeometry(self: Wallstick)
-	local newCachedCollisionGeometry = {}
+       local newCachedCollisionGeometry = {}
+       local newCachedTerrainGeometry = {}
 
-	local originCF = self:_getOriginCFrame()
-	local realRootCF = self.real.rootPart.CFrame
-	local stickCFInv = self.part.CFrame:Inverse()
+       local originCF = self:_getOriginCFrame()
+       local realRootCF = self.real.rootPart.CFrame
+       local stickCFInv = self.part.CFrame:Inverse()
 
 	local colliderBoxSizeHalf = Vector3.new(10, 10, 10)
 
@@ -189,53 +192,113 @@ function WallstickClass._updateCollisionGeometry(self: Wallstick)
                params
        ) :: { BasePart }
 
-	for _, realPart in parts do
-		local collisionPart: BasePart
-		local foundPart = self.cachedCollisionGeometry[realPart]
+       local terrainHit = false
 
-		if not foundPart then
-			local properties = CLASS_NAMES_TO_CONVERT[realPart.ClassName] :: { [string]: any }
+       for _, realPart in parts do
+               if realPart:IsA("Terrain") then
+                       terrainHit = true
+               else
+                       local collisionPart: BasePart
+                       local foundPart = self.cachedCollisionGeometry[realPart]
 
-			if properties then
-				local convertedPart = Instance.new(properties.ClassName) :: any
-				for key, value in properties do
-					if key ~= "ClassName" then
-						(convertedPart :: any)[key] = value
-					end
-				end
+                       if not foundPart then
+                               local properties = CLASS_NAMES_TO_CONVERT[realPart.ClassName] :: { [string]: any }
 
-				collisionPart = convertedPart :: BasePart
-			else
-				collisionPart = realPart:Clone()
-				collisionPart.Name = "Part"
-				collisionPart:ClearAllChildren()
-			end
+                               if properties then
+                                       local convertedPart = Instance.new(properties.ClassName) :: any
+                                       for key, value in properties do
+                                               if key ~= "ClassName" then
+                                                       (convertedPart :: any)[key] = value
+                                               end
+                                       end
 
-			collisionPart.CollisionGroup = "WallstickCollision"
-			collisionPart.Parent = self.geometry
-		else
-			collisionPart = foundPart
-		end
+                                       collisionPart = convertedPart :: BasePart
+                               else
+                                       collisionPart = realPart:Clone()
+                                       collisionPart.Name = "Part"
+                                       collisionPart:ClearAllChildren()
+                               end
 
-		collisionPart.Anchored = true
-		collisionPart.CastShadow = false
-		collisionPart.AssemblyLinearVelocity = Vector3.zero
-		collisionPart.AssemblyAngularVelocity = Vector3.zero
-		collisionPart.CFrame = originCF * (stickCFInv * realPart.CFrame)
-		collisionPart.Size = realPart.Size
-		collisionPart.CanCollide = realPart.CanCollide
-		collisionPart.Transparency = 1
+                               collisionPart.CollisionGroup = "WallstickCollision"
+                               collisionPart.Parent = self.geometry
+                       else
+                               collisionPart = foundPart
+                       end
 
-		self.cachedCollisionGeometry[realPart] = collisionPart
-		newCachedCollisionGeometry[realPart] = collisionPart
-	end
+                       collisionPart.Anchored = true
+                       collisionPart.CastShadow = false
+                       collisionPart.AssemblyLinearVelocity = Vector3.zero
+                       collisionPart.AssemblyAngularVelocity = Vector3.zero
+                       collisionPart.CFrame = originCF * (stickCFInv * realPart.CFrame)
+                       collisionPart.Size = realPart.Size
+                       collisionPart.CanCollide = realPart.CanCollide
+                       collisionPart.Transparency = 1
 
-	for realPart, collisionPart in self.cachedCollisionGeometry do
-		if not newCachedCollisionGeometry[realPart] then
-			self.cachedCollisionGeometry[realPart] = nil
-			collisionPart:Destroy()
-		end
-	end
+                       self.cachedCollisionGeometry[realPart] = collisionPart
+                       newCachedCollisionGeometry[realPart] = collisionPart
+               end
+       end
+
+       if terrainHit then
+               local region = Region3.new(
+                       realRootCF.Position - colliderBoxSizeHalf,
+                       realRootCF.Position + colliderBoxSizeHalf
+               )
+               region = region:ExpandToGrid(4)
+
+               local materials, occupancies = workspace.Terrain:ReadVoxels(region, 4)
+               local cellSize = region.Size / materials.Size
+
+               for x = 1, materials.Size.X do
+                       for y = 1, materials.Size.Y do
+                               for z = 1, materials.Size.Z do
+                                       if materials[x][y][z] ~= Enum.Material.Air and occupancies[x][y][z] > 0 then
+                                               local worldPos =
+                                                       region.CFrame.Position
+                                                       + Vector3.new(
+                                                               (x - 0.5) * cellSize.X,
+                                                               (y - 0.5) * cellSize.Y,
+                                                               (z - 0.5) * cellSize.Z
+                                                       )
+                                               local key = string.format("%d_%d_%d", x, y, z)
+
+                                               local collisionPart = self.cachedTerrainGeometry[key]
+                                               if not collisionPart then
+                                                       collisionPart = Instance.new("Part")
+                                                       collisionPart.Size = cellSize
+                                                       collisionPart.CollisionGroup = "WallstickCollision"
+                                                       collisionPart.Parent = self.geometry
+                                               end
+
+                                               collisionPart.Anchored = true
+                                               collisionPart.CastShadow = false
+                                               collisionPart.AssemblyLinearVelocity = Vector3.zero
+                                               collisionPart.AssemblyAngularVelocity = Vector3.zero
+                                               collisionPart.CFrame = originCF * (stickCFInv * CFrame.new(worldPos))
+                                               collisionPart.CanCollide = true
+                                               collisionPart.Transparency = 1
+
+                                               self.cachedTerrainGeometry[key] = collisionPart
+                                               newCachedTerrainGeometry[key] = collisionPart
+                                       end
+                               end
+                       end
+               end
+       end
+
+       for key, collisionPart in self.cachedTerrainGeometry do
+               if not newCachedTerrainGeometry[key] then
+                       self.cachedTerrainGeometry[key] = nil
+                       collisionPart:Destroy()
+               end
+       end
+
+       for realPart, collisionPart in self.cachedCollisionGeometry do
+               if not newCachedCollisionGeometry[realPart] then
+                       self.cachedCollisionGeometry[realPart] = nil
+                       collisionPart:Destroy()
+               end
+       end
 end
 
 function WallstickClass._trySendReplication(self: Wallstick, force: boolean)
