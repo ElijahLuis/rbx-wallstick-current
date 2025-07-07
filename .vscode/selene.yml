@@ -14,3 +14,11 @@ globals:
       - type:
           display: Vector3
     must_use: true
+  # TestEZ globals
+  describe:
+  it:
+  beforeAll:
+  afterAll:
+  beforeEach:
+  afterEach:
+  expect:
