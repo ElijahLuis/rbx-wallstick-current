@@ -48,38 +48,38 @@ function Replication.listenServer()
 		replicatorRemote:FireAllClients(nil, nil, player)
 	end)
 
-       local function isCFrameValid(cf: CFrame)
-               for _, v in cf:GetComponents() do
-                       if v ~= v or v == math.huge or v == -math.huge then
-                               return false
-                       end
-               end
+	   local function isCFrameValid(cf: CFrame)
+	           for _, v in cf:GetComponents() do
+	                   if v ~= v or v == math.huge or v == -math.huge then
+	                           return false
+	                   end
+	           end
 
-               return true
-       end
+	           return true
+	   end
 
-       replicatorRemote.OnServerEvent:Connect(function(player, part, offset)
-               local character = player.Character
+	   replicatorRemote.OnServerEvent:Connect(function(player, part, offset)
+	           local character = player.Character
 
-               if part and offset then
-                       if character and part:IsDescendantOf(character) and isCFrameValid(offset) then
-                               framesByPlayer[player] = {
-                                       part = part,
-                                       offset = offset,
-                               }
-                       else
-                               framesByPlayer[player] = nil
-                               warn(`Replication: invalid data from {player.Name}`)
-                               part = nil
-                               offset = nil
-                               -- player:Kick("Invalid replication data")
-                       end
-               else
-                       framesByPlayer[player] = nil
-               end
+	           if part and offset then
+	                   if character and part:IsDescendantOf(character) and isCFrameValid(offset) then
+	                           framesByPlayer[player] = {
+	                                   part = part,
+	                                   offset = offset,
+	                           }
+	                   else
+	                           framesByPlayer[player] = nil
+	                           warn(`Replication: invalid data from {player.Name}`)
+	                           part = nil
+	                           offset = nil
+	                           -- player:Kick("Invalid replication data")
+	                   end
+	           else
+	                   framesByPlayer[player] = nil
+	           end
 
-               replicatorRemote:FireAllClients(part, offset, player)
-       end)
+	           replicatorRemote:FireAllClients(part, offset, player)
+	   end)
 
 	syncRemote.OnServerInvoke = function(_player)
 		return framesByPlayer

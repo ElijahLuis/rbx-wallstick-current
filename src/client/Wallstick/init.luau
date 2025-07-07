@@ -190,9 +190,9 @@ function WallstickClass._updateCollisionGeometry(self: Wallstick)
 
 	local colliderBoxSizeHalf = Vector3.new(10, 10, 10)
 
-       -- stylua: ignore
-       -- selene: allow (deprecated)
-       local params = OverlapParams.new()
+	   -- stylua: ignore
+	   -- selene: allow (deprecated)
+	   local params = OverlapParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.FilterDescendantsInstances = { self.real.character, self.options.parent } :: { Instance }
 	local parts =
@@ -359,8 +359,8 @@ function WallstickClass._stepPhysics(self: Wallstick, _dt: number)
 
 	local realRootCFrame = self:_getCalculatedRealRootCFrame()
 
-       self.real.alignPosition.Position = realRootCFrame.Position
-       self.real.alignOrientation.CFrame = realRootCFrame
+	   self.real.alignPosition.Position = realRootCFrame.Position
+	   self.real.alignOrientation.CFrame = realRootCFrame
 
 	self:_updateCollisionGeometry()
 	self:_trySendReplication(false)

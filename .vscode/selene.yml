@@ -5,7 +5,7 @@ globals:
   require:
     args:
     - type: string
-  
+
   # Add missing CFrame constructor
   CFrame.fromRotationBetweenVectors:
     args:
