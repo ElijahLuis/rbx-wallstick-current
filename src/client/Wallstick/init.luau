@@ -277,7 +277,14 @@ end
 
 function WallstickClass._stepPhysics(self: Wallstick, _dt: number)
 	if self.fake.rootPart.Position.Y <= workspace.FallenPartsDestroyHeight then
-		self:Destroy()
+		if self.real.humanoid.Health > 0 then
+			self.real.humanoid.Health = 0
+
+			task.spawn(function()
+				self.real.humanoid.Died:Wait()
+				self:Destroy()
+			end)
+		end
 		return
 	end
 
