@@ -15,6 +15,16 @@ https://github.com/user-attachments/assets/c6d9a53d-f6c2-4924-9286-728e21b92ee8
 2. From the repository root run `wally install` to fetch Lua dependencies.
 3. Build the place with `rojo build default.project.json -o Wallstick.rbxlx` or start a live session with `rojo serve`.
 
+## Testing
+
+1. Install development dependencies with `wally install`.
+2. Run the test runner using `lune/run-tests.luau`:
+
+```bash
+lune run lune/run-tests.luau
+```
+
+
 ## Demo
 
 A ready made place can be found at `demo/playground.rbxl`. You can open this file directly in Roblox Studio after running `wally install`. Alternatively build your own place with Rojo using the command above.
