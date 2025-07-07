@@ -35,14 +35,9 @@ local function run(program: string, params: { string }, options: Options?)
 end
 
 run("wally", { "install" })
-run("rojo", { "sourcemap", "default.project.json", "-o", "sourcemap.json" })
 
 for _, folderName in { "Packages", "DevPackages", "ServerPackages" } do
-	if fs.isDir(folderName) then
-		run("wally-package-types", { "--sourcemap", "sourcemap.json", folderName })
-	end
-
-	if not fs.isDir(folderName) then
-		fs.writeDir(folderName)
-	end
+        if not fs.isDir(folderName) then
+                fs.writeDir(folderName)
+        end
 end

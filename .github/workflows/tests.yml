@@ -29,6 +29,6 @@ jobs:
           sudo mv lune/lune /usr/local/bin/lune
           chmod +x /usr/local/bin/lune
       - name: Install dependencies
-        run: wally install
+        run: lune run lune/wally-install.luau
       - name: Run tests
         run: lune run lune/run-tests.luau
