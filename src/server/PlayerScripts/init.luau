@@ -8,9 +8,9 @@ local StarterCharacterScripts = StarterPlayer:WaitForChild("StarterCharacterScri
 local ServerPackages = ServerScriptService.ServerPackages
 local PlayerModulePackage = require(ServerPackages.PlayerModule)
 
-local module = {}
+local PlayerScriptsModule = {}
 
-local function replaceIfExists(parent: Instance, instance: Instance)
+local function replaceIfPresent(parent: Instance, instance: Instance)
 	local found = parent:FindFirstChild(instance.Name)
 	if found then
 		found:Destroy()
@@ -19,7 +19,7 @@ local function replaceIfExists(parent: Instance, instance: Instance)
 	instance.Parent = parent
 end
 
-function module.setup()
+function PlayerScriptsModule.setup()
 	local patched = PlayerModulePackage.getCopy(true)
 	local modifiers = require(patched:WaitForChild("Modifiers")) :: any
 	modifiers.add(script.GravityCameraModifier)
@@ -28,8 +28,8 @@ function module.setup()
 	local renamedCharacterSounds = script.CharacterSounds:Clone()
 	renamedCharacterSounds.Name = "RbxCharacterSounds"
 
-	replaceIfExists(StarterCharacterScripts, script.Animate:Clone())
-	replaceIfExists(StarterPlayerScripts, renamedCharacterSounds)
+        replaceIfPresent(StarterCharacterScripts, script.Animate:Clone())
+        replaceIfPresent(StarterPlayerScripts, renamedCharacterSounds)
 end
 
-return module
+return PlayerScriptsModule
