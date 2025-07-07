@@ -9,21 +9,21 @@ local animate = script.Parent
 local character = animate.Parent
 local performer = character:WaitForChild("Humanoid")
 
-local module = {}
-local controller
+local AnimateControllerModule = {}
+local activeController
 
-function module.matchAnimate(director: Humanoid)
-	if controller then
-		controller.cleanup()
-	end
+function AnimateControllerModule.matchAnimate(director: Humanoid)
+        if activeController then
+                activeController.cleanup()
+        end
 
-	controller = CharacterAnimate.animate(animate, director, performer)
+        activeController = CharacterAnimate.animate(animate, director, performer)
 end
 
 animate:WaitForChild("PlayEmote").OnInvoke = function(emote)
-	return controller.playEmote(emote)
+        return activeController.playEmote(emote)
 end
 
-module.matchAnimate(performer)
+AnimateControllerModule.matchAnimate(performer)
 
-return module
+return AnimateControllerModule

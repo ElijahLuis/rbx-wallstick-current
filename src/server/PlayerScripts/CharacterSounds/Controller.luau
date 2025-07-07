@@ -6,7 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SharedPackages = ReplicatedStorage.SharedPackages
 local CharacterSounds = require(SharedPackages.CharacterSounds)
 
-local module = {}
+local CharacterSoundsManager = {}
 
 -- Private
 
@@ -16,10 +16,10 @@ type PlayerState = {
 	connections: { RBXScriptConnection },
 }
 
-local playerStates: { [Player]: PlayerState } = {}
+local statesByPlayer: { [Player]: PlayerState } = {}
 
 local function terminateSound(player: Player)
-	local state = playerStates[player]
+        local state = statesByPlayer[player]
 	if state and state.terminateSound then
 		state.terminateSound()
 		state.terminateSound = nil
@@ -33,7 +33,7 @@ end
 local function characterAdded(player: Player, character: Model)
 	characterRemoving(player, character)
 
-	local state = playerStates[player]
+        local state = statesByPlayer[player]
 	if state then
 		local performer = state.performer or character
 		local controller = CharacterSounds.listen(performer, character)
@@ -45,14 +45,14 @@ end
 local function playerRemoving(player: Player)
 	terminateSound(player)
 
-	local state = playerStates[player]
+        local state = statesByPlayer[player]
 	if state then
 		for _, connection in state.connections do
 			connection:Disconnect()
 		end
 	end
 
-	playerStates[player] = nil
+        statesByPlayer[player] = nil
 end
 
 local function playerAdded(player: Player)
@@ -82,7 +82,7 @@ local function playerAdded(player: Player)
 		end)
 	)
 
-	playerStates[player] = state
+        statesByPlayer[player] = state
 end
 
 for _, player in Players:GetPlayers() do
@@ -94,8 +94,8 @@ Players.PlayerRemoving:Connect(playerRemoving)
 
 -- Public
 
-function module.setPerformer(player: Player, performer: Model?)
-	local state = playerStates[player]
+function CharacterSoundsManager.setPerformer(player: Player, performer: Model?)
+        local state = statesByPlayer[player]
 	if state then
 		state.performer = performer
 
@@ -108,4 +108,4 @@ end
 
 --
 
-return module
+return CharacterSoundsManager
