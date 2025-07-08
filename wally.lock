@@ -42,8 +42,3 @@ name = "upliftgames/playermodule"
 version = "675.1.6750723"
 dependencies = []
 
-[[package]]
-name = "roblox/testez"
-version = "0.4.1"
-dependencies = []
-
