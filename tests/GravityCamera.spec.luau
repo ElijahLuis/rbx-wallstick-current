@@ -1,3 +1,4 @@
+-- selene: allow(global_usage)
 return function()
 	-- stub PlayerModule dependencies
 	local fakeControls = {
