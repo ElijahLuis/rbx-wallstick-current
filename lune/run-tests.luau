@@ -15,6 +15,9 @@ local function run(cmd: string, args: {string})
 	end
 end
 
+-- Ensure packages are installed before running the tests
+run("lune", {"run", "lune/wally-install.luau"})
+
 run("selene", {"src", "tests"})
 run("rojo", {"build", "tests.project.json", "-o", "TestPlace.rbxl"})
 run("lune", {"test", "tests.project.json"})

@@ -17,9 +17,8 @@ https://github.com/user-attachments/assets/c6d9a53d-f6c2-4924-9286-728e21b92ee8
 
 ## Testing
 
-1. Install development dependencies with `lune run lune/wally-install.luau`.
-2. Lint the project with `selene src tests`.
-3. Run the test runner using `lune/run-tests.luau`:
+1. Lint the project with `selene src tests`.
+2. Run the test runner using `lune/run-tests.luau` (this will install dependencies automatically):
 
 ```bash
 lune run lune/run-tests.luau
