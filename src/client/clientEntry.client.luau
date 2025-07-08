@@ -10,17 +10,42 @@ local RaycastHelper = require(SharedPackages.RaycastHelper)
 local WallstickClass = require(ReplicatedStorage.Wallstick)
 local Replication = require(ReplicatedStorage.Wallstick.Replication)
 
+local LIMB_NAMES: { [string]: boolean } = {
+       -- R6
+       Head = true,
+       Torso = true,
+       ["Left Arm"] = true,
+       ["Right Arm"] = true,
+       ["Left Leg"] = true,
+       ["Right Leg"] = true,
+       -- R15
+       UpperTorso = true,
+       LowerTorso = true,
+       LeftUpperArm = true,
+       LeftLowerArm = true,
+       LeftHand = true,
+       RightUpperArm = true,
+       RightLowerArm = true,
+       RightHand = true,
+       LeftUpperLeg = true,
+       LeftLowerLeg = true,
+       LeftFoot = true,
+       RightUpperLeg = true,
+       RightLowerLeg = true,
+       RightFoot = true,
+}
+
 local function ignoreCharacterParts(result: RaycastResult)
-	local hit = result.Instance :: BasePart
-	local accessory = hit:FindFirstAncestorWhichIsA("Accessory")
+       local hit = result.Instance :: BasePart
+       local accessory = hit:FindFirstAncestorWhichIsA("Accessory")
 
-	local character = (accessory or hit).Parent
-	local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
-	if character and humanoid then
-		return not (accessory or humanoid:GetLimb(hit) ~= Enum.Limb.Unknown)
-	end
+       local character = (accessory or hit).Parent
+       local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
+       if character and humanoid then
+               return not (accessory or LIMB_NAMES[hit.Name] ~= nil)
+       end
 
-	return true
+       return true
 end
 
 local function onCharacterAdded(character: Model)
