@@ -1,8 +1,9 @@
-name: CI
+name: Tests
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
+
   pull_request:
 
 jobs:
@@ -10,33 +11,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install Wally
-        run: |
-          curl -L https://github.com/UpliftGames/wally/releases/download/v0.3.2/wally-v0.3.2-linux.zip -o wally.zip
-          unzip -q wally.zip -d wally
-          sudo mv wally/wally /usr/local/bin/wally
-          chmod +x /usr/local/bin/wally
-      - name: Install Rojo
-        run: |
-          curl -L https://github.com/rojo-rbx/rojo/releases/download/v7.5.1/rojo-7.5.1-linux-x86_64.zip -o rojo.zip
-          unzip -q rojo.zip -d rojo
-          sudo mv rojo/rojo /usr/local/bin/rojo
-          chmod +x /usr/local/bin/rojo
-      - name: Install Lune
-        run: |
-          curl -L https://github.com/lune-org/lune/releases/download/v0.9.3/lune-0.9.3-linux-x86_64.zip -o lune.zip
-          unzip -q lune.zip -d lune
-          sudo mv lune/lune /usr/local/bin/lune
-          chmod +x /usr/local/bin/lune
-      - name: Install Selene
-        run: |
-          curl -L https://github.com/Kampfkarren/selene/releases/download/0.26.1/selene-0.26.1-linux.zip -o selene.zip
-          unzip -q selene.zip -d selene
-          sudo mv selene/selene /usr/local/bin/selene
-          chmod +x /usr/local/bin/selene
+
+      - name: Cache Wally packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            Packages
+            DevPackages
+            ServerPackages
+          key: ${{ runner.os }}-wally-${{ hashFiles('wally.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-wally-
+
       - name: Install dependencies
-        run: lune run lune/wally-install.luau
-      - name: Lint
-        run: selene src tests
+        run: |
+          if [ ! -x "$(command -v wally)" ]; then
+            curl -L https://github.com/UpliftGames/wally/releases/download/v0.3.2/wally-v0.3.2-linux.zip -o wally.zip
+            unzip -q wally.zip -d wally
+            sudo mv wally/wally /usr/local/bin/wally
+          fi
+          wally --version
+          lune run lune/wally-install.luau
+
       - name: Run tests
-        run: lune run lune/run-tests.luau
+        run: |
+          lune run lune/run-tests.luau

@@ -10,9 +10,8 @@ https://github.com/user-attachments/assets/2a0478de-6e1f-4676-b778-9709b9e3f18f
 https://github.com/user-attachments/assets/c6d9a53d-f6c2-4924-9286-728e21b92ee8
 
 ## Installation
-
-1. Install [Wally](https://github.com/UpliftGames/wally) and [Rojo](https://github.com/rojo-rbx/rojo) and make sure they are available on your `PATH`.
-2. From the repository root run `lune run lune/wally-install.luau` to fetch Lua dependencies.
+1. Install [Wally](https://github.com/UpliftGames/wally), [Rojo](https://github.com/rojo-rbx/rojo), and [Lune](https://github.com/lune-org/lune/releases) and make sure they are available on your `PATH`. Lune can also be installed using [Rokit](https://github.com/rojo-rbx/rokit).
+2. From the repository root run `wally install` to fetch Lua dependencies.
 3. Build the place with `rojo build default.project.json -o Wallstick.rbxlx` or start a live session with `rojo serve`.
 
 ## Testing
