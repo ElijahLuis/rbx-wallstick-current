@@ -18,6 +18,4 @@ CharacterAnimate = "egomoose/character-animate@0.0.3"
 [server-dependencies]
 PlayerModule = "upliftgames/playermodule@675.1.6750723"
 
-[dev-dependencies]
-TestEZ = "roblox/testez@0.4.1"
 
