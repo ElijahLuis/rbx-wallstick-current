@@ -31,6 +31,17 @@ This module uses the Roblox open-source toolchain:
 2. From the repository root, run `wally install` to fetch Lua dependencies. If you have [Lune](https://github.com/lune-org/lune/releases) installed you can also run `lune lune/wally-install.luau` to generate type definitions.
 3. Build the place with `rojo build default.project.json -o Wallstick.rbxlx` or start a live session with `rojo serve`.
 
+## Integrating Into Your Game
+Add this repository as a dependency in your own project and copy the runtime scripts.
+
+1. Add `egomoose/rbx-wallstick` under `[dependencies]` in your `wally.toml` then run `wally install`.
+2. Map or move the following files into your experience (Rojo can automate this):
+   - `src/client/Wallstick` → `ReplicatedStorage.Wallstick`
+   - `src/shared/WallstickConfig.luau` → `ReplicatedStorage.WallstickConfig`
+   - `src/client/clientEntry.client.luau` → `StarterPlayer.StarterPlayerScripts.WallstickClient`
+   - `src/server` → `ServerScriptService.WallstickServer`
+3. Ensure `StreamingEnabled` is off and start the experience. The server script automatically sets up the required collision groups and replication.
+
 ## Configuration
 Key movement parameters can be tweaked in `ReplicatedStorage.WallstickConfig`.
 Adjust values like `STICK_RANGE`, `DETECTION_SHAPE`, or `MAX_FALL_DISTANCE` to fit your game before building with Rojo.
