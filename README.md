@@ -19,11 +19,25 @@ https://github.com/user-attachments/assets/c6d9a53d-f6c2-4924-9286-728e21b92ee8
 
 A ready made place can be found at `demo/playground.rbxl`. You can open this file directly in Roblox Studio after running `wally install`. Alternatively build your own place with Rojo using the command above.
 
+## Configuration
+
+Key movement parameters can be tweaked in `ReplicatedStorage.WallstickConfig`.
+Adjust values like `STICK_RANGE`, `DETECTION_SHAPE`, or `MAX_FALL_DISTANCE` to
+fit your game before building with Rojo.
+
 ## New Features
 
 * **R6 avatar support** – both R6 and R15 characters are handled correctly.
 * **Simple replication** – player orientation is replicated between clients via `Wallstick.Replication`.
 * **Runtime streaming check** – the client warns when `StreamingEnabled` is on.
+
+## How It Works
+
+When a character spawns a `Wallstick` instance is created. The client gathers
+nearby geometry each frame and aligns a hidden clone of the character to the
+surface. A custom camera module (`GravityCamera`) follows this clone so the
+view rotates with the wall. Basic orientation information is shared between
+players through `Wallstick.Replication` to keep others in sync.
 
 ## Limitations
 
@@ -33,5 +47,5 @@ A ready made place can be found at `demo/playground.rbxl`. You can open this fil
 ## Troubleshooting
 
 * Ensure `workspace.Terrain` exists and contains solid terrain or ground parts. The character defaults to sticking to terrain when no other part is found.
-* If the character does not attach, verify that Wally packages are installed and that Rojo successfully built the place.
+* If the character does not attach, verify that Wally packages are installed and that Rojo successfully built the place. Missing packages will now produce runtime warnings.
 

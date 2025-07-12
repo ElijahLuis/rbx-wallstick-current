@@ -2,17 +2,20 @@
 	"name": "rbx-wallstick",
 	"tree": {
 		"$className": "DataModel",
-		"ReplicatedStorage": {
-			"$className": "ReplicatedStorage",
-			"SharedPackages": {
-				"$path": {
-					"optional": "Packages"
-				}
-			},
-			"Wallstick": {
-				"$path": "src/client/Wallstick"
-			}
-		},
+                "ReplicatedStorage": {
+                        "$className": "ReplicatedStorage",
+                        "SharedPackages": {
+                                "$path": {
+                                        "optional": "Packages"
+                                }
+                        },
+                        "Wallstick": {
+                                "$path": "src/client/Wallstick"
+                        },
+                        "WallstickConfig": {
+                                "$path": "src/shared/WallstickConfig.luau"
+                        }
+                },
 		"ServerScriptService": {
 			"$className": "ServerScriptService",
 			"WallstickServer": {
