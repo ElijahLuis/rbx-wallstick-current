@@ -9,8 +9,9 @@ Orientation information is shared between players through `Wallstick.Replication
 
 ## Demo
 A ready-made place can be found at `demo/playground.rbxl`. 
-You can open this file directly in Roblox Studio after running `wally install`. 
-Alternatively build your own place with Rojo using the command above.
+You can open this file directly in Roblox Studio after running `wally install`.
+Alternatively build your own place with Rojo using the command above or start a
+live session with `rojo serve`.
 
 ### Demo Videos
 Example 1: https://github.com/user-attachments/assets/bd4efde2-9323-4db1-896c-6407263e458e
@@ -21,13 +22,13 @@ Example 3: https://github.com/user-attachments/assets/c6d9a53d-f6c2-4924-9286-72
 This module uses the Roblox open-source toolchain:  
 **wally** for dependency management, **rojo** for syncing/building, and optionally **lune** for type safety.
 
-1. Install the tools. Make sure they are available on your `PATH`:
+1. Install the tools. Make sure they are available on your `PATH` or managed with [Rokit](https://github.com/rojo-rbx/rokit):
 
 - [Wally](https://github.com/UpliftGames/wally)
 - [Rojo](https://github.com/rojo-rbx/rojo)
 - [Lune](https://github.com/lune-org/lune/releases). Can also be installed using [Rokit](https://github.com/rojo-rbx/rokit).
 
-2. From the repository root, run `wally install` to fetch Lua dependencies.
+2. From the repository root, run `wally install` to fetch Lua dependencies. If you have [Lune](https://github.com/lune-org/lune/releases) installed you can also run `lune lune/wally-install.luau` to generate type definitions.
 3. Build the place with `rojo build default.project.json -o Wallstick.rbxlx` or start a live session with `rojo serve`.
 
 ## Configuration
