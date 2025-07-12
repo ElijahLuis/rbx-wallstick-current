@@ -4,8 +4,19 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local SharedPackages = ReplicatedStorage.SharedPackages
-local RaycastHelper = require(SharedPackages.RaycastHelper)
+local SharedPackages = ReplicatedStorage:FindFirstChild("SharedPackages")
+if not SharedPackages then
+       warn("[Wallstick] SharedPackages missing. Did you run 'wally install'?")
+       return
+end
+
+local ok, RaycastHelper = pcall(require, SharedPackages:FindFirstChild("RaycastHelper"))
+if not ok then
+       warn("[Wallstick] Failed to load RaycastHelper. Ensure dependencies are installed.")
+       return
+end
+
+local Config = require(ReplicatedStorage:WaitForChild("WallstickConfig"))
 
 local WallstickClass = require(ReplicatedStorage.Wallstick)
 local Replication = require(ReplicatedStorage.Wallstick.Replication)
@@ -72,23 +83,23 @@ local function onCharacterAdded(character: Model)
 			return
 		end
 
-		if wallstick:getFallDistance() < -50 then
-			wallstick:set(workspace.Terrain, Vector3.yAxis)
-			return
-		end
+               if wallstick:getFallDistance() < -Config.MAX_FALL_DISTANCE then
+                       wallstick:set(workspace.Terrain, Vector3.yAxis)
+                       return
+               end
 
 		local hipHeight = humanoid.HipHeight
 		if humanoid.RigType == Enum.HumanoidRigType.R6 then
 			hipHeight = 2
 		end
 
-		local hrpCF = hrp.CFrame
-		local result = RaycastHelper.raycast({
-			origin = hrpCF.Position,
-			direction = -(hipHeight + hrp.Size.Y / 2 + 0.1) * hrpCF.YVector,
-			filter = ignoreCharacterParts,
-			rayParams = rayParams,
-		})
+               local hrpCF = hrp.CFrame
+               local result = RaycastHelper.raycast({
+                       origin = hrpCF.Position,
+                       direction = -(hipHeight + hrp.Size.Y / 2 + Config.STICK_RANGE) * hrpCF.YVector,
+                       filter = ignoreCharacterParts,
+                       rayParams = rayParams,
+               })
 
 		if result then
 			local stickPart = (result.Instance :: BasePart).AssemblyRootPart
