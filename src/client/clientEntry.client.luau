@@ -70,8 +70,9 @@ local function onCharacterAdded(character: Model)
 		},
 	})
 
-	local humanoid = character and character:WaitForChild("Humanoid") :: Humanoid
-	local hrp = humanoid and humanoid.RootPart :: BasePart
+        local humanoid = character and character:WaitForChild("Humanoid") :: Humanoid
+        humanoid.WalkSpeed = 16
+        local hrp = humanoid and humanoid.RootPart :: BasePart
 
 	local rayParams = RaycastHelper.params({
 		filterType = Enum.RaycastFilterType.Exclude,
@@ -93,21 +94,23 @@ local function onCharacterAdded(character: Model)
 			hipHeight = 2
 		end
 
-               local hrpCF = hrp.CFrame
-               local result = RaycastHelper.raycast({
-                       origin = hrpCF.Position,
-                       direction = -(hipHeight + hrp.Size.Y / 2 + Config.STICK_RANGE) * hrpCF.YVector,
-                       filter = ignoreCharacterParts,
-                       rayParams = rayParams,
-               })
+                local hrpCF = hrp.CFrame
+                local result = RaycastHelper.raycast({
+                        origin = hrpCF.Position,
+                        direction = -(hipHeight + hrp.Size.Y / 2 + Config.STICK_RANGE) * hrpCF.YVector,
+                        filter = ignoreCharacterParts,
+                        rayParams = rayParams,
+                })
 
-		if result then
-			local stickPart = (result.Instance :: BasePart).AssemblyRootPart
-			local stickNormal = stickPart.CFrame:VectorToObjectSpace(result.Normal)
+                if result then
+                        local stickPart = (result.Instance :: BasePart).AssemblyRootPart
+                        local stickNormal = stickPart.CFrame:VectorToObjectSpace(result.Normal)
 
-			wallstick:setAndPivot(stickPart, stickNormal, result.Position)
-		end
-	end)
+                        wallstick:setAndPivot(stickPart, stickNormal, result.Position)
+                else
+                        wallstick:set(workspace.Terrain, Vector3.yAxis)
+                end
+        end)
 
 	humanoid.Died:Wait()
 	simulationConnection:Disconnect()

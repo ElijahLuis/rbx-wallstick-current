@@ -58,28 +58,28 @@ function Replication.listenServer()
 	           return true
 	   end
 
-	   replicatorRemote.OnServerEvent:Connect(function(player, part, offset)
-	           local character = player.Character
+            replicatorRemote.OnServerEvent:Connect(function(player, part, offset)
+                    local character = player.Character
 
-	           if part and offset then
-	                   if character and part:IsDescendantOf(character) and isCFrameValid(offset) then
-	                           framesByPlayer[player] = {
-	                                   part = part,
-	                                   offset = offset,
-	                           }
-	                   else
-	                           framesByPlayer[player] = nil
-	                           warn(`Replication: invalid data from {player.Name}`)
-	                           part = nil
-	                           offset = nil
-	                           -- player:Kick("Invalid replication data")
-	                   end
-	           else
-	                   framesByPlayer[player] = nil
-	           end
+                    if part and offset then
+                            if character and part:IsDescendantOf(workspace) and isCFrameValid(offset) then
+                                    framesByPlayer[player] = {
+                                            part = part,
+                                            offset = offset,
+                                    }
+                            else
+                                    framesByPlayer[player] = nil
+                                    warn(`Replication: invalid data from {player.Name}`)
+                                    part = nil
+                                    offset = nil
+                                    -- player:Kick("Invalid replication data")
+                            end
+                    else
+                            framesByPlayer[player] = nil
+                    end
 
-	           replicatorRemote:FireAllClients(part, offset, player)
-	   end)
+                    replicatorRemote:FireAllClients(part, offset, player)
+            end)
 
 	syncRemote.OnServerInvoke = function(_player)
 		return framesByPlayer
