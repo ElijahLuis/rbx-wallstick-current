@@ -71,7 +71,7 @@ local function onCharacterAdded(character: Model)
 	})
 
 	local humanoid = character and character:WaitForChild("Humanoid") :: Humanoid
-	humanoid.WalkSpeed = 16
+	humanoid.WalkSpeed = 20
 	local hrp = humanoid and humanoid.RootPart :: BasePart
 
 	local rayParams = RaycastHelper.params({
