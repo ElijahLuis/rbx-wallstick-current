@@ -13,7 +13,7 @@ function DoubleJump.setup(fakeHumanoid: Humanoid, realHumanoid: Humanoid)
 	table.insert(
 		connections,
 		fakeHumanoid.StateChanged:Connect(function(_, newState)
-			if newState == Enum.HumanoidStateType.Landed then
+			if newState == Enum.HumanoidStateType.Landed or newState == Enum.HumanoidStateType.Running then
 				canDouble = true
 			end
 		end)
@@ -24,6 +24,7 @@ function DoubleJump.setup(fakeHumanoid: Humanoid, realHumanoid: Humanoid)
 		UserInputService.JumpRequest:Connect(function()
 			local state = fakeHumanoid:GetState()
 			if (state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall) and canDouble then
+				fakeHumanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 				realHumanoid.Jump = true
 				canDouble = false
 			end
