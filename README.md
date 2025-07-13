@@ -2,10 +2,16 @@
 A system for sticking characters to surfaces within Roblox, created by EgoMoose and modified by Nejinumanuma.
 
 ## How It Works
-When a character spawns, a `Wallstick` instance is created. 
-The client gathers nearby geometry each frame and aligns a hidden clone of the character to the surface. 
-A custom camera module (`GravityCamera`) follows this clone so the view rotates with the wall. 
-Orientation information is shared between players through `Wallstick.Replication` to keep others in sync.
+1. The server sets up collision groups, patches `StarterPlayerScripts` with a
+camera modifier, and starts the replication service. 
+2. When the local character spawns, `clientEntry.client` constructs a `Wallstick` instance. 
+It creates a stripped clone of the character using `CharacterHelper` and aligns this "fake"
+model to nearby surfaces found via raycasts. 
+3. AlignPosition and AlignOrientation then pull the real humanoid to match, while `GravityCamera`- 
+augmented by the camera modifier - rotates the view and `RotationSpring` smooths motion. 
+5. The current surface part and offset are sent through `Wallstick.Replication` so the
+server can relay orientation to other clients. Parameters like stick range and
+fall timing come from `WallstickConfig`.
 
 ## Demo
 A ready-made place to test the Wallstick module can be found at `demo/playground.rbxl`. 
