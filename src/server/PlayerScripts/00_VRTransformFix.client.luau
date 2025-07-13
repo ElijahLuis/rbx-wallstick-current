@@ -14,27 +14,27 @@ local function patchCameraModule(cameraModule: any)
 	end
 end
 
-local function tryPatch()
+local function tryPatch(): boolean?
 	local player = Players.LocalPlayer
 	if not player then
-		return
+		return nil
 	end
 
 	local playerScripts = player:FindFirstChild("PlayerScripts")
 	if not playerScripts then
-		return
+		return nil
 	end
 
 	local playerModule = playerScripts:FindFirstChild("PlayerModule")
 	if not playerModule then
-		return
+		return nil
 	end
 
 	local success, cameraModule = pcall(require, playerModule:FindFirstChild("CameraModule"))
 	if success and type(cameraModule) == "table" then
 		patchCameraModule(cameraModule)
 	else
-		return
+		return nil
 	end
 
 	local successPm, pmTable = pcall(require, playerModule)
@@ -43,6 +43,10 @@ local function tryPatch()
 	end
 
 	RunService:UnbindFromRenderStep("VRTransformFix")
+	return true
 end
 
-RunService:BindToRenderStep("VRTransformFix", Enum.RenderPriority.First.Value, tryPatch)
+-- Attempt immediately and keep retrying each render step until patched
+if not tryPatch() then
+	RunService:BindToRenderStep("VRTransformFix", Enum.RenderPriority.First.Value, tryPatch)
+end
