@@ -1,5 +1,6 @@
 # Roblox Wallstick (Modernized)
-A system for sticking characters to surfaces within Roblox, created by EgoMoose and modified by Nejinumanuma.
+A modular system for sticking characters to walls, ceilings, and terrain surfaces in Roblox.  
+Originally created by [EgoMoose](https://github.com/EgoMoose) and modernized by **Nejinumanuma**(https://github.com/ElijahLuis).
 
 ## How It Works
 1. The server sets up collision groups, patches `StarterPlayerScripts` with a
