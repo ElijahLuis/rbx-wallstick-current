@@ -20,3 +20,9 @@ if cameraModule.ApplyVRTransform == nil then
 
 	cameraModule.ApplyVRTransform = defaultApplyVRTransform
 end
+
+-- Some modules may reference the CameraModule through PlayerModule.CameraModule.
+-- Ensure they see the patched method as well.
+if playerModule.CameraModule and playerModule.CameraModule.ApplyVRTransform == nil then
+	playerModule.CameraModule.ApplyVRTransform = cameraModule.ApplyVRTransform
+end
