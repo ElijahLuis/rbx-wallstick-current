@@ -188,7 +188,7 @@ local function onCharacterAdded(character: Model)
 						wallstick:set(workspace.Terrain, Vector3.yAxis)
 					end
 					fallTime = 0
-				elseif fallTime >= Config.PLANET_PULL_TIME then
+				elseif fallTime >= Config.OUT_OF_BOUNDS_TIME then
 					local planet = findNearestPlanet()
 					if planet then
 						local direction = (planet.Position - hrp.Position).Unit
