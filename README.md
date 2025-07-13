@@ -8,12 +8,8 @@ A custom camera module (`GravityCamera`) follows this clone so the view rotates 
 Orientation information is shared between players through `Wallstick.Replication` to keep others in sync.
 
 ## Demo
-A ready-made place can be found at `demo/playground.rbxl`. 
-You can open this file directly in Roblox Studio after running `wally install`.
-Alternatively build your own place with Rojo using the command above or start a
-live session with `rojo serve`.
-
-### Demo Videos
+A ready-made place to test the Wallstick module can be found at `demo/playground.rbxl`. 
+You can also find videos created by EgoMoose which shows how it works:
 Example 1: https://github.com/user-attachments/assets/bd4efde2-9323-4db1-896c-6407263e458e
 Example 2: https://github.com/user-attachments/assets/2a0478de-6e1f-4676-b778-9709b9e3f18f
 Example 3: https://github.com/user-attachments/assets/c6d9a53d-f6c2-4924-9286-728e21b92ee8
@@ -25,22 +21,13 @@ This module uses the Roblox open-source toolchain:
 1. Install the tools. Make sure they are available on your `PATH` or managed with [Rokit](https://github.com/rojo-rbx/rokit):
 
 - [Wally](https://github.com/UpliftGames/wally)
-- [Rojo](https://github.com/rojo-rbx/rojo)
-- [Lune](https://github.com/lune-org/lune/releases). Can also be installed using [Rokit](https://github.com/rojo-rbx/rokit).
+- [Rojo](https://github.com/rojo-rbx/rojo). Also install the Roblox Studio plugin.
+- [Lune](https://github.com/lune-org/lune/releases).
 
-2. From the repository root, run `wally install` to fetch Lua dependencies. If you have [Lune](https://github.com/lune-org/lune/releases) installed you can also run `lune lune/wally-install.luau` to generate type definitions.
-3. Build the place with `rojo build default.project.json -o Wallstick.rbxlx` or start a live session with `rojo serve`.
+2. From the repository root, run `wally install` to fetch Lua dependencies. 
+3. Start a live session with `rojo serve`. Then use the Rojo plugin on Roblox Studio to sync your session. 
 
-## Integrating Into Your Game
-Add this repository as a dependency in your own project and copy the runtime scripts.
-
-1. Add `egomoose/rbx-wallstick` under `[dependencies]` in your `wally.toml` then run `wally install`.
-2. Map or move the following files into your experience (Rojo can automate this):
-   - `src/client/Wallstick` → `ReplicatedStorage.Wallstick`
-   - `src/shared/WallstickConfig.luau` → `ReplicatedStorage.WallstickConfig`
-   - `src/client/clientEntry.client.luau` → `StarterPlayer.StarterPlayerScripts.WallstickClient`
-   - `src/server` → `ServerScriptService.WallstickServer`
-3. Ensure `StreamingEnabled` is off and start the experience. The server script automatically sets up the required collision groups and replication.
+When both "rojo serve" is running and Rojo plugin is connected, all changes made in your coding environment should now reflect in Roblox Studio. 
 
 ## Configuration
 Key movement parameters can be tweaked in `ReplicatedStorage.WallstickConfig`.
