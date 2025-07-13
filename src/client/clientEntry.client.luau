@@ -75,7 +75,18 @@ local function onCharacterAdded(character: Model)
 	local hrp = humanoid and humanoid.RootPart :: BasePart
 
 	local fallTime = 0
-	local planets = { "PlanetA", "PlanetB", "PlanetC" }
+
+	local function getPlanets()
+		local list = {}
+		for _, obj in ipairs(workspace:GetChildren()) do
+			if obj:IsA("BasePart") and obj.Name:sub(1, 6) == "Planet" then
+				table.insert(list, obj)
+			end
+		end
+		return list
+	end
+
+	local planets = getPlanets()
 	local spawnLocation = workspace:FindFirstChild("SpawnLocation")
 
 	local function findNearestPlanet()
@@ -83,15 +94,12 @@ local function onCharacterAdded(character: Model)
 		local closestDist = math.huge
 		local pos = hrp.Position
 
-		for _, name in ipairs(planets) do
-			local planet = workspace:FindFirstChild(name)
-			if planet and planet:IsA("BasePart") then
-				local dist = (planet.Position - pos).Magnitude
-				local radius = planet.Size.Magnitude * 1.5
-				if dist <= radius and dist < closestDist then
-					closest = planet
-					closestDist = dist
-				end
+		for _, planet in ipairs(planets) do
+			local dist = (planet.Position - pos).Magnitude
+			local radius = planet.Size.Magnitude * Config.PLANET_ORBIT_MULTIPLIER
+			if dist <= radius and dist < closestDist then
+				closest = planet
+				closestDist = dist
 			end
 		end
 
@@ -103,7 +111,7 @@ local function onCharacterAdded(character: Model)
 		instances = { character :: Instance },
 	})
 
-	local function findNearestSurface()
+	local function findNearestSurface(range: number, planetsOnly: boolean?)
 		local hrpCF = hrp.CFrame
 		local directions = {
 			-hrpCF.YVector,
@@ -116,14 +124,28 @@ local function onCharacterAdded(character: Model)
 
 		local best
 		for _, dir in ipairs(directions) do
-			local result = workspace:Raycast(hrp.Position, dir.Unit * Config.PULL_SEARCH_RADIUS, rayParams)
-			if result and (not best or result.Distance < best.Distance) then
-				best = result
+			local result = workspace:Raycast(hrp.Position, dir.Unit * range, rayParams)
+			if result and (not planetsOnly or result.Instance.Name:sub(1, 6) == "Planet") then
+				if not best or result.Distance < best.Distance then
+					best = result
+				end
 			end
 		end
 
 		return best
 	end
+
+	local touchedConnection = hrp.Touched:Connect(function(hit)
+		if hit.Name:sub(1, 6) == "Planet" then
+			local surface = findNearestSurface(Config.STICK_RANGE, true)
+			if surface then
+				local part = (surface.Instance :: BasePart).AssemblyRootPart
+				local normal = part.CFrame:VectorToObjectSpace(surface.Normal)
+				wallstick:setAndPivot(part, normal, surface.Position)
+				fallTime = 0
+			end
+		end
+	end)
 
 	local simulationConnection = RunService.PreSimulation:Connect(function(dt)
 		if not wallstick:isEnabled() then
@@ -182,6 +204,7 @@ local function onCharacterAdded(character: Model)
 
 	humanoid.Died:Wait()
 	simulationConnection:Disconnect()
+	touchedConnection:Disconnect()
 	wallstick:Destroy()
 end
 
