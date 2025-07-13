@@ -76,17 +76,30 @@ local function onCharacterAdded(character: Model)
 
 	local fallTime = 0
 
-	local function getPlanets()
-		local list = {}
-		for _, obj in ipairs(workspace:GetChildren()) do
-			if obj:IsA("BasePart") and obj.Name:sub(1, 6) == "Planet" then
-				table.insert(list, obj)
-			end
-		end
-		return list
-	end
+        local planetsFolder = workspace:FindFirstChild("Planets")
+        assert(planetsFolder, "Planets folder missing")
 
-	local planets = getPlanets()
+        local function getPlanetPart(instance: Instance): BasePart?
+                if instance:IsA("BasePart") then
+                        return instance
+                elseif instance:IsA("Model") then
+                        return instance.PrimaryPart or instance:FindFirstChildWhichIsA("BasePart")
+                end
+                return nil
+        end
+
+        local function getPlanets()
+                local list = {}
+                for _, obj in ipairs(planetsFolder:GetChildren()) do
+                        local part = getPlanetPart(obj)
+                        if part then
+                                table.insert(list, part)
+                        end
+                end
+                return list
+        end
+
+        local planets = getPlanets()
 	local spawnLocation = workspace:FindFirstChild("SpawnLocation")
 
 	local function findNearestPlanet()
@@ -123,25 +136,25 @@ local function onCharacterAdded(character: Model)
 		}
 
 		local best
-		for _, dir in ipairs(directions) do
-			local result = workspace:Raycast(hrp.Position, dir.Unit * range, rayParams)
-			if result and (not planetsOnly or result.Instance.Name:sub(1, 6) == "Planet") then
-				if not best or result.Distance < best.Distance then
-					best = result
-				end
-			end
-		end
+                for _, dir in ipairs(directions) do
+                        local result = workspace:Raycast(hrp.Position, dir.Unit * range, rayParams)
+                        if result and (not planetsOnly or result.Instance:IsDescendantOf(planetsFolder)) then
+                                if not best or result.Distance < best.Distance then
+                                        best = result
+                                end
+                        end
+                end
 
 		return best
 	end
 
-	local touchedConnection = hrp.Touched:Connect(function(hit)
-		if hit.Name:sub(1, 6) == "Planet" then
-			local surface = findNearestSurface(Config.STICK_RANGE, true)
-			if surface then
-				local part = (surface.Instance :: BasePart).AssemblyRootPart
-				local normal = part.CFrame:VectorToObjectSpace(surface.Normal)
-				wallstick:setAndPivot(part, normal, surface.Position)
+        local touchedConnection = hrp.Touched:Connect(function(hit)
+                if hit:IsDescendantOf(planetsFolder) then
+                        local surface = findNearestSurface(Config.STICK_RANGE, true)
+                        if surface then
+                                local part = (surface.Instance :: BasePart).AssemblyRootPart
+                                local normal = part.CFrame:VectorToObjectSpace(surface.Normal)
+                                wallstick:setAndPivot(part, normal, surface.Position)
 				fallTime = 0
 			end
 		end
