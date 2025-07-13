@@ -92,6 +92,7 @@ local function onCharacterAdded(character: Model)
 
 	local lastJumpTime = 0
 	local jumpCount = 0
+	local ignoreSurfaceEnd = 0
 
 	local function findNearestPlanet(exclude: BasePart?)
 		local closest
@@ -116,6 +117,9 @@ local function onCharacterAdded(character: Model)
 		local current = wallstick:getPart()
 		local target = findNearestPlanet(current)
 		if target then
+			wallstick:set(workspace.Terrain, Vector3.yAxis)
+			ignoreSurfaceEnd = os.clock() + 0.5
+			fallTime = 0
 			local direction = (target.Position - hrp.Position).Unit
 			hrp.AssemblyLinearVelocity = direction * Config.DOUBLE_JUMP_SPEED
 		end
@@ -163,18 +167,17 @@ local function onCharacterAdded(character: Model)
 	end)
 
 	local jumpRequestConnection = UserInputService.JumpRequest:Connect(function()
-		if humanoid:GetState() == Enum.HumanoidStateType.Freefall then
-			local now = os.clock()
-			if now - lastJumpTime <= 0.4 then
-				jumpCount += 1
-			else
-				jumpCount = 1
-			end
-			lastJumpTime = now
-			if jumpCount >= 2 then
-				planetHop()
-				jumpCount = 0
-			end
+		local now = os.clock()
+		if now - lastJumpTime <= 0.4 then
+			jumpCount += 1
+		else
+			jumpCount = 1
+		end
+		lastJumpTime = now
+
+		if jumpCount >= 2 and humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+			planetHop()
+			jumpCount = 0
 		end
 	end)
 
@@ -211,7 +214,7 @@ local function onCharacterAdded(character: Model)
 			rayParams = rayParams,
 		})
 
-		if result then
+		if result and os.clock() >= ignoreSurfaceEnd then
 			local stickPart = (result.Instance :: BasePart).AssemblyRootPart
 			local stickNormal = stickPart.CFrame:VectorToObjectSpace(result.Normal)
 
