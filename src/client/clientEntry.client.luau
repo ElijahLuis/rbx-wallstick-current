@@ -20,6 +20,7 @@ local Config = require(ReplicatedStorage:WaitForChild("WallstickConfig"))
 
 local WallstickClass = require(ReplicatedStorage.Wallstick)
 local Replication = require(ReplicatedStorage.Wallstick.Replication)
+local DoubleJump = require(ReplicatedStorage.Wallstick.DoubleJump)
 
 local LIMB_NAMES: { [string]: boolean } = {
 	-- R6
@@ -74,6 +75,7 @@ local function onCharacterAdded(character: Model)
 	humanoid.WalkSpeed = 20
 	local hrp = humanoid and humanoid.RootPart :: BasePart
 
+	local cleanupDoubleJump = DoubleJump.setup(wallstick.fake.humanoid, wallstick.real.humanoid)
 	local fallTime = 0
 
 	local function getPlanets()
@@ -205,6 +207,7 @@ local function onCharacterAdded(character: Model)
 	humanoid.Died:Wait()
 	simulationConnection:Disconnect()
 	touchedConnection:Disconnect()
+	cleanupDoubleJump()
 	wallstick:Destroy()
 end
 
