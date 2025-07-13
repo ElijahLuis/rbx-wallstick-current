@@ -169,14 +169,6 @@ object instance and the CameraModule table for safety.
 		end
 
 		cameraObject.ApplyVRTransform = defaultApplyVRTransform
-		-- The returned module table is patched above. Avoid setting fields directly on
-		-- the ModuleScript instance because Instances cannot have arbitrary members.
-
-		if PlayerModule.CameraModule.ApplyVRTransform == nil then
-			function PlayerModule.CameraModule.ApplyVRTransform(...)
-				return cameraObject.ApplyVRTransform(cameraObject, ...)
-			end
-		end
 	end
 
 	function cameraObject:GetUpVector(): Vector3
