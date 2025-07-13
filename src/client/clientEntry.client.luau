@@ -70,47 +70,92 @@ local function onCharacterAdded(character: Model)
 		},
 	})
 
-	local humanoid = character and character:WaitForChild("Humanoid") :: Humanoid
-	humanoid.WalkSpeed = 20
-	local hrp = humanoid and humanoid.RootPart :: BasePart
+        local humanoid = character and character:WaitForChild("Humanoid") :: Humanoid
+        humanoid.WalkSpeed = 20
+        local hrp = humanoid and humanoid.RootPart :: BasePart
+
+        local fallTime = 0
 
 	local rayParams = RaycastHelper.params({
 		filterType = Enum.RaycastFilterType.Exclude,
 		instances = { character :: Instance },
 	})
 
-	local simulationConnection = RunService.PreSimulation:Connect(function(_dt)
-		if not wallstick:isEnabled() then
-			return
-		end
+        local function findNearestSurface()
+                local hrpCF = hrp.CFrame
+                local directions = {
+                        -hrpCF.YVector,
+                        Vector3.yAxis * -1,
+                        hrpCF.LookVector,
+                        -hrpCF.LookVector,
+                        hrpCF.RightVector,
+                        -hrpCF.RightVector,
+                }
 
-		if wallstick:getFallDistance() < -Config.MAX_FALL_DISTANCE then
-			wallstick:set(workspace.Terrain, Vector3.yAxis)
-			return
-		end
+                local best
+                for _, dir in ipairs(directions) do
+                        local result = workspace:Raycast(
+                                hrp.Position,
+                                dir.Unit * Config.PULL_SEARCH_RADIUS,
+                                rayParams
+                        )
+                        if result and (not best or result.Distance < best.Distance) then
+                                best = result
+                        end
+                end
 
-		local hipHeight = humanoid.HipHeight
-		if humanoid.RigType == Enum.HumanoidRigType.R6 then
-			hipHeight = 2
-		end
+                return best
+        end
 
-		local hrpCF = hrp.CFrame
-		local result = RaycastHelper.raycast({
-			origin = hrpCF.Position,
-			direction = -(hipHeight + hrp.Size.Y / 2 + Config.STICK_RANGE) * hrpCF.YVector,
-			filter = ignoreCharacterParts,
-			rayParams = rayParams,
-		})
+        local simulationConnection = RunService.PreSimulation:Connect(function(dt)
+                if not wallstick:isEnabled() then
+                        return
+                end
 
-		if result then
-			local stickPart = (result.Instance :: BasePart).AssemblyRootPart
-			local stickNormal = stickPart.CFrame:VectorToObjectSpace(result.Normal)
+                if wallstick:getFallDistance() < -Config.MAX_FALL_DISTANCE then
+                        wallstick:set(workspace.Terrain, Vector3.yAxis)
+                        return
+                end
 
-			wallstick:setAndPivot(stickPart, stickNormal, result.Position)
-		else
-			wallstick:set(workspace.Terrain, Vector3.yAxis)
-		end
-	end)
+                local hipHeight = humanoid.HipHeight
+                if humanoid.RigType == Enum.HumanoidRigType.R6 then
+                        hipHeight = 2
+                end
+
+                local hrpCF = hrp.CFrame
+                local result = RaycastHelper.raycast({
+                        origin = hrpCF.Position,
+                        direction = -(hipHeight + hrp.Size.Y / 2 + Config.STICK_RANGE) * hrpCF.YVector,
+                        filter = ignoreCharacterParts,
+                        rayParams = rayParams,
+                })
+
+                if result then
+                        local stickPart = (result.Instance :: BasePart).AssemblyRootPart
+                        local stickNormal = stickPart.CFrame:VectorToObjectSpace(result.Normal)
+
+                        wallstick:setAndPivot(stickPart, stickNormal, result.Position)
+                        fallTime = 0
+                else
+                        if humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+                                fallTime += dt
+                                if fallTime >= Config.FALL_PULL_TIME then
+                                        local surface = findNearestSurface()
+                                        if surface then
+                                                local part = (surface.Instance :: BasePart).AssemblyRootPart
+                                                local normal = part.CFrame:VectorToObjectSpace(surface.Normal)
+                                                wallstick:setAndTeleport(part, normal, surface.Position)
+                                                fallTime = 0
+                                        else
+                                                wallstick:set(workspace.Terrain, Vector3.yAxis)
+                                                fallTime = 0
+                                        end
+                                end
+                        else
+                                fallTime = 0
+                        end
+                end
+        end)
 
 	humanoid.Died:Wait()
 	simulationConnection:Disconnect()
