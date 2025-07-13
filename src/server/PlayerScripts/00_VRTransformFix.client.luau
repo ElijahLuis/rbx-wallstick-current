@@ -1,42 +1,36 @@
 --!strict
 
-local originalRequire = require
+local Players = game:GetService("Players")
 
-local function defaultApplyVRTransform(self: any, ...)
-	if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
-		return self.activeCameraController:ApplyVRTransform(...)
-	end
-	return nil
-end
-
-function require(moduleScript: ModuleScript, ...)
-	local result = originalRequire(moduleScript, ...)
-
-	if moduleScript.Name == "CameraModule" and type(result) == "table" then
-		if result.ApplyVRTransform == nil then
-			result.ApplyVRTransform = defaultApplyVRTransform
-		end
-
-		-- Also expose the patched method through PlayerModule.CameraModule
-		local parent = moduleScript.Parent
-		if parent and parent:IsA("ModuleScript") then
-			local parentTable = originalRequire(parent)
-			if type(parentTable) == "table" and parentTable.CameraModule then
-				if parentTable.CameraModule.ApplyVRTransform == nil then
-					parentTable.CameraModule.ApplyVRTransform = result.ApplyVRTransform
-				end
+local function patchCameraModule(cameraModule: any)
+	if cameraModule.ApplyVRTransform == nil then
+		function cameraModule:ApplyVRTransform(...)
+			if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
+				return self.activeCameraController:ApplyVRTransform(...)
 			end
-		end
-	elseif moduleScript.Name == "PlayerModule" and type(result) == "table" then
-		if result.CameraModule and type(result.CameraModule) == "table" then
-			if result.CameraModule.ApplyVRTransform == nil then
-				local cameraTable = originalRequire(moduleScript:WaitForChild("CameraModule"))
-				if type(cameraTable) == "table" and cameraTable.ApplyVRTransform then
-					result.CameraModule.ApplyVRTransform = cameraTable.ApplyVRTransform
-				end
-			end
+			return nil
 		end
 	end
-
-	return result
 end
+
+local function init()
+	local player = Players.LocalPlayer
+	if not player then
+		player = Players.PlayerAdded:Wait()
+	end
+
+	local playerScripts = player:WaitForChild("PlayerScripts")
+	local playerModule = playerScripts:WaitForChild("PlayerModule")
+
+	-- Ensure CameraModule has a fallback
+	local cameraModule = require(playerModule:WaitForChild("CameraModule"))
+	patchCameraModule(cameraModule)
+
+	-- Also patch through PlayerModule if it exposes CameraModule
+	local pmTable = require(playerModule)
+	if type(pmTable) == "table" and type(pmTable.CameraModule) == "table" then
+		patchCameraModule(pmTable.CameraModule)
+	end
+end
+
+init()
