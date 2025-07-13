@@ -1,28 +1,42 @@
 --!strict
 
--- Ensure ApplyVRTransform exists before PlayerScriptsLoader runs.
--- This prevents errors when the loader expects a VR handler in Studio.
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local playerScripts = player:WaitForChild("PlayerScripts")
-local playerModuleScript = playerScripts:WaitForChild("PlayerModule")
-local playerModule = require(playerModuleScript)
+local originalRequire = require
 
-local cameraModuleScript = playerModuleScript:WaitForChild("CameraModule")
-local cameraModule = require(cameraModuleScript)
-if cameraModule.ApplyVRTransform == nil then
-	local function defaultApplyVRTransform(self: any, ...)
-		if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
-			return self.activeCameraController:ApplyVRTransform(...)
-		end
-		return nil
+local function defaultApplyVRTransform(self: any, ...)
+	if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
+		return self.activeCameraController:ApplyVRTransform(...)
 	end
-
-	cameraModule.ApplyVRTransform = defaultApplyVRTransform
+	return nil
 end
 
--- Some modules may reference the CameraModule through PlayerModule.CameraModule.
--- Ensure they see the patched method as well.
-if playerModule.CameraModule and playerModule.CameraModule.ApplyVRTransform == nil then
-	playerModule.CameraModule.ApplyVRTransform = cameraModule.ApplyVRTransform
+function require(moduleScript: ModuleScript, ...)
+	local result = originalRequire(moduleScript, ...)
+
+	if moduleScript.Name == "CameraModule" and type(result) == "table" then
+		if result.ApplyVRTransform == nil then
+			result.ApplyVRTransform = defaultApplyVRTransform
+		end
+
+		-- Also expose the patched method through PlayerModule.CameraModule
+		local parent = moduleScript.Parent
+		if parent and parent:IsA("ModuleScript") then
+			local parentTable = originalRequire(parent)
+			if type(parentTable) == "table" and parentTable.CameraModule then
+				if parentTable.CameraModule.ApplyVRTransform == nil then
+					parentTable.CameraModule.ApplyVRTransform = result.ApplyVRTransform
+				end
+			end
+		end
+	elseif moduleScript.Name == "PlayerModule" and type(result) == "table" then
+		if result.CameraModule and type(result.CameraModule) == "table" then
+			if result.CameraModule.ApplyVRTransform == nil then
+				local cameraTable = originalRequire(moduleScript:WaitForChild("CameraModule"))
+				if type(cameraTable) == "table" and cameraTable.ApplyVRTransform then
+					result.CameraModule.ApplyVRTransform = cameraTable.ApplyVRTransform
+				end
+			end
+		end
+	end
+
+	return result
 end
