@@ -184,6 +184,18 @@ return function(PlayerModule: any)
 		return currentRotationType
 	end
 
+	-- Stub implementation for compatibility with PlayerScriptsLoader.
+	-- The default PlayerModule exposes ApplyVRTransform for VR updates.
+	-- Some versions may call this method even when VR is unused, so we
+	-- forward the call to the active camera controller if available.
+	function cameraObject:ApplyVRTransform(...)
+		if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
+			return self.activeCameraController:ApplyVRTransform(...)
+		end
+		-- If no handler exists, silently do nothing.
+		return nil
+	end
+
 	function cameraObject:Update(dt: number)
 		if self.activeCameraController then
 			self.activeCameraController:UpdateMouseBehavior()
