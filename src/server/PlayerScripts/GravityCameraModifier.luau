@@ -149,32 +149,29 @@ return function(PlayerModule: any)
 	end
 
 	------------
-local cameraObject = require(PlayerModule.CameraModule) :: any
-local cameraInput = require(PlayerModule.CameraModule.CameraInput) :: any
+	local cameraObject = require(PlayerModule.CameraModule) :: any
+	local cameraInput = require(PlayerModule.CameraModule.CameraInput) :: any
 
---[[
+	--[[
 Some PlayerScriptsLoader implementations expect ApplyVRTransform to exist
 on the CameraModule table before any controllers initialize. When running in
 Studio without VR, this method may be missing which results in runtime
 errors. Define a no-op handler early and expose it through both the camera
 object instance and the CameraModule table for safety.
 ]]
-if cameraObject.ApplyVRTransform == nil then
-local function defaultApplyVRTransform(self: any, ...)
-if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
-return self.activeCameraController:ApplyVRTransform(...)
-end
--- If no handler exists, silently do nothing.
-return nil
-end
+	if cameraObject.ApplyVRTransform == nil then
+		local function defaultApplyVRTransform(self: any, ...)
+			if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
+				return self.activeCameraController:ApplyVRTransform(...)
+			end
+			-- If no handler exists, silently do nothing.
+			return nil
+		end
 
-cameraObject.ApplyVRTransform = defaultApplyVRTransform
-if PlayerModule.CameraModule.ApplyVRTransform == nil then
-function PlayerModule.CameraModule.ApplyVRTransform(...)
-return cameraObject.ApplyVRTransform(cameraObject, ...)
-end
-end
-end
+		cameraObject.ApplyVRTransform = defaultApplyVRTransform
+		-- The returned module table is patched above. Avoid setting fields directly on
+		-- the ModuleScript instance because Instances cannot have arbitrary members.
+	end
 
 	function cameraObject:GetUpVector(): Vector3
 		return upVector
