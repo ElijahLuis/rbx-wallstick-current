@@ -115,6 +115,7 @@ end
 function CharacterHelper.real(player: Player): RealCharacter
 	local character = getCharacter(player)
 	local packaged = packageCharacter(character) :: RealCharacter
+	packaged.humanoid.WalkSpeed = 20
 
 	local rootAttach = packaged.rootPart:WaitForChild("RootAttachment") :: Attachment
 
@@ -145,6 +146,7 @@ end
 function CharacterHelper.fake(player: Player): FakeCharacter
 	local character = createFakeCharacter(player)
 	local packaged = packageCharacter(character) :: FakeCharacter
+	packaged.humanoid.WalkSpeed = 20
 
 	local rootAttach = packaged.rootPart:WaitForChild("RootAttachment") :: Attachment
 

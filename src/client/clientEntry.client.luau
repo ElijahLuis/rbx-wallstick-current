@@ -6,14 +6,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SharedPackages = ReplicatedStorage:FindFirstChild("SharedPackages")
 if not SharedPackages then
-       warn("[Wallstick] SharedPackages missing. Did you run 'wally install'?")
-       return
+	warn("[Wallstick] SharedPackages missing. Did you run 'wally install'?")
+	return
 end
 
 local ok, RaycastHelper = pcall(require, SharedPackages:FindFirstChild("RaycastHelper"))
 if not ok then
-       warn("[Wallstick] Failed to load RaycastHelper. Ensure dependencies are installed.")
-       return
+	warn("[Wallstick] Failed to load RaycastHelper. Ensure dependencies are installed.")
+	return
 end
 
 local Config = require(ReplicatedStorage:WaitForChild("WallstickConfig"))
@@ -22,41 +22,41 @@ local WallstickClass = require(ReplicatedStorage.Wallstick)
 local Replication = require(ReplicatedStorage.Wallstick.Replication)
 
 local LIMB_NAMES: { [string]: boolean } = {
-       -- R6
-       Head = true,
-       Torso = true,
-       ["Left Arm"] = true,
-       ["Right Arm"] = true,
-       ["Left Leg"] = true,
-       ["Right Leg"] = true,
-       -- R15
-       UpperTorso = true,
-       LowerTorso = true,
-       LeftUpperArm = true,
-       LeftLowerArm = true,
-       LeftHand = true,
-       RightUpperArm = true,
-       RightLowerArm = true,
-       RightHand = true,
-       LeftUpperLeg = true,
-       LeftLowerLeg = true,
-       LeftFoot = true,
-       RightUpperLeg = true,
-       RightLowerLeg = true,
-       RightFoot = true,
+	-- R6
+	Head = true,
+	Torso = true,
+	["Left Arm"] = true,
+	["Right Arm"] = true,
+	["Left Leg"] = true,
+	["Right Leg"] = true,
+	-- R15
+	UpperTorso = true,
+	LowerTorso = true,
+	LeftUpperArm = true,
+	LeftLowerArm = true,
+	LeftHand = true,
+	RightUpperArm = true,
+	RightLowerArm = true,
+	RightHand = true,
+	LeftUpperLeg = true,
+	LeftLowerLeg = true,
+	LeftFoot = true,
+	RightUpperLeg = true,
+	RightLowerLeg = true,
+	RightFoot = true,
 }
 
 local function ignoreCharacterParts(result: RaycastResult)
-       local hit = result.Instance :: BasePart
-       local accessory = hit:FindFirstAncestorWhichIsA("Accessory")
+	local hit = result.Instance :: BasePart
+	local accessory = hit:FindFirstAncestorWhichIsA("Accessory")
 
-       local character = (accessory or hit).Parent
-       local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
-       if character and humanoid then
-               return not (accessory or LIMB_NAMES[hit.Name] ~= nil)
-       end
+	local character = (accessory or hit).Parent
+	local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
+	if character and humanoid then
+		return not (accessory or LIMB_NAMES[hit.Name] ~= nil)
+	end
 
-       return true
+	return true
 end
 
 local function onCharacterAdded(character: Model)
@@ -71,6 +71,7 @@ local function onCharacterAdded(character: Model)
 	})
 
 	local humanoid = character and character:WaitForChild("Humanoid") :: Humanoid
+	humanoid.WalkSpeed = 20
 	local hrp = humanoid and humanoid.RootPart :: BasePart
 
 	local rayParams = RaycastHelper.params({
@@ -83,29 +84,31 @@ local function onCharacterAdded(character: Model)
 			return
 		end
 
-               if wallstick:getFallDistance() < -Config.MAX_FALL_DISTANCE then
-                       wallstick:set(workspace.Terrain, Vector3.yAxis)
-                       return
-               end
+		if wallstick:getFallDistance() < -Config.MAX_FALL_DISTANCE then
+			wallstick:set(workspace.Terrain, Vector3.yAxis)
+			return
+		end
 
 		local hipHeight = humanoid.HipHeight
 		if humanoid.RigType == Enum.HumanoidRigType.R6 then
 			hipHeight = 2
 		end
 
-               local hrpCF = hrp.CFrame
-               local result = RaycastHelper.raycast({
-                       origin = hrpCF.Position,
-                       direction = -(hipHeight + hrp.Size.Y / 2 + Config.STICK_RANGE) * hrpCF.YVector,
-                       filter = ignoreCharacterParts,
-                       rayParams = rayParams,
-               })
+		local hrpCF = hrp.CFrame
+		local result = RaycastHelper.raycast({
+			origin = hrpCF.Position,
+			direction = -(hipHeight + hrp.Size.Y / 2 + Config.STICK_RANGE) * hrpCF.YVector,
+			filter = ignoreCharacterParts,
+			rayParams = rayParams,
+		})
 
 		if result then
 			local stickPart = (result.Instance :: BasePart).AssemblyRootPart
 			local stickNormal = stickPart.CFrame:VectorToObjectSpace(result.Normal)
 
 			wallstick:setAndPivot(stickPart, stickNormal, result.Position)
+		else
+			wallstick:set(workspace.Terrain, Vector3.yAxis)
 		end
 	end)
 
