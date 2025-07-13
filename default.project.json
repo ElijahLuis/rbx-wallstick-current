@@ -9,6 +9,9 @@
                                         "optional": "Packages"
                                 }
                         },
+                        "GravityController": {
+                                "$path": "src/shared/GravityController.luau"
+                        },
                         "Wallstick": {
                                 "$path": "src/client/Wallstick"
                         },
