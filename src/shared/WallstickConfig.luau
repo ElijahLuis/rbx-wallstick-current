@@ -9,7 +9,6 @@ local Config = {
 	PLANET_PULL_TIME = 4, -- seconds before pulling to nearest planet
 	RESPAWN_TIME = 7, -- seconds before teleporting to SpawnLocation
 	OUT_OF_BOUNDS_TIME = 5, -- seconds in freefall before redirecting to a planet
-	DOUBLE_JUMP_SPEED = 80, -- velocity applied when planet hopping
 	PLANET_ORBIT_MULTIPLIER = 2, -- multiplier for planet orbit radius based on size
 }
 

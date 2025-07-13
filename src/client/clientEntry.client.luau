@@ -3,7 +3,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
 
 local SharedPackages = ReplicatedStorage:FindFirstChild("SharedPackages")
 if not SharedPackages then
@@ -90,39 +89,21 @@ local function onCharacterAdded(character: Model)
 	local planets = getPlanets()
 	local spawnLocation = workspace:FindFirstChild("SpawnLocation")
 
-	local lastJumpTime = 0
-	local jumpCount = 0
-	local ignoreSurfaceEnd = 0
-
-	local function findNearestPlanet(exclude: BasePart?)
+	local function findNearestPlanet()
 		local closest
 		local closestDist = math.huge
 		local pos = hrp.Position
 
 		for _, planet in ipairs(planets) do
-			if planet ~= exclude then
-				local dist = (planet.Position - pos).Magnitude
-				local radius = planet.Size.Magnitude * Config.PLANET_ORBIT_MULTIPLIER
-				if dist <= radius and dist < closestDist then
-					closest = planet
-					closestDist = dist
-				end
+			local dist = (planet.Position - pos).Magnitude
+			local radius = planet.Size.Magnitude * Config.PLANET_ORBIT_MULTIPLIER
+			if dist <= radius and dist < closestDist then
+				closest = planet
+				closestDist = dist
 			end
 		end
 
 		return closest
-	end
-
-	local function planetHop()
-		local current = wallstick:getPart()
-		local target = findNearestPlanet(current)
-		if target then
-			wallstick:set(workspace.Terrain, Vector3.yAxis)
-			ignoreSurfaceEnd = os.clock() + 0.5
-			fallTime = 0
-			local direction = (target.Position - hrp.Position).Unit
-			hrp.AssemblyLinearVelocity = direction * Config.DOUBLE_JUMP_SPEED
-		end
 	end
 
 	local rayParams = RaycastHelper.params({
@@ -166,31 +147,6 @@ local function onCharacterAdded(character: Model)
 		end
 	end)
 
-	local jumpRequestConnection = UserInputService.JumpRequest:Connect(function()
-		local now = os.clock()
-		if now - lastJumpTime <= 0.4 then
-			jumpCount += 1
-		else
-			jumpCount = 1
-		end
-		lastJumpTime = now
-
-		if jumpCount >= 2 and humanoid:GetState() == Enum.HumanoidStateType.Freefall then
-			planetHop()
-			jumpCount = 0
-		end
-	end)
-
-	local stateConnection = humanoid.StateChanged:Connect(function(_, newState)
-		if
-			newState == Enum.HumanoidStateType.Landed
-			or newState == Enum.HumanoidStateType.Running
-			or newState == Enum.HumanoidStateType.RunningNoPhysics
-		then
-			jumpCount = 0
-		end
-	end)
-
 	local simulationConnection = RunService.PreSimulation:Connect(function(dt)
 		if not wallstick:isEnabled() then
 			return
@@ -214,7 +170,7 @@ local function onCharacterAdded(character: Model)
 			rayParams = rayParams,
 		})
 
-		if result and os.clock() >= ignoreSurfaceEnd then
+		if result then
 			local stickPart = (result.Instance :: BasePart).AssemblyRootPart
 			local stickNormal = stickPart.CFrame:VectorToObjectSpace(result.Normal)
 
@@ -236,7 +192,8 @@ local function onCharacterAdded(character: Model)
 					local planet = findNearestPlanet()
 					if planet then
 						local direction = (planet.Position - hrp.Position).Unit
-						hrp.AssemblyLinearVelocity = direction * Config.DOUBLE_JUMP_SPEED
+						local speed = hrp.AssemblyLinearVelocity.Magnitude
+						hrp.AssemblyLinearVelocity = direction * speed
 					end
 				end
 			else
@@ -248,8 +205,6 @@ local function onCharacterAdded(character: Model)
 	humanoid.Died:Wait()
 	simulationConnection:Disconnect()
 	touchedConnection:Disconnect()
-	jumpRequestConnection:Disconnect()
-	stateConnection:Disconnect()
 	wallstick:Destroy()
 end
 
