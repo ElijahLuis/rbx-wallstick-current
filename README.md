@@ -16,9 +16,9 @@ fall timing come from `WallstickConfig`.
 ## Demo
 A ready-made place to test the Wallstick module can be found at `demo/playground.rbxl`. 
 You can also find videos created by EgoMoose which shows how it works:
-Example 1: https://github.com/user-attachments/assets/bd4efde2-9323-4db1-896c-6407263e458e
-Example 2: https://github.com/user-attachments/assets/2a0478de-6e1f-4676-b778-9709b9e3f18f
-Example 3: https://github.com/user-attachments/assets/c6d9a53d-f6c2-4924-9286-728e21b92ee8
+- Example 1: https://github.com/user-attachments/assets/bd4efde2-9323-4db1-896c-6407263e458e
+- Example 2: https://github.com/user-attachments/assets/2a0478de-6e1f-4676-b778-9709b9e3f18f
+- Example 3: https://github.com/user-attachments/assets/c6d9a53d-f6c2-4924-9286-728e21b92ee8
 
 ## Installation
 This module uses the Roblox open-source toolchain:  
