@@ -40,9 +40,10 @@ Key movement parameters can be tweaked in `ReplicatedStorage.WallstickConfig`.
 Adjust values like `STICK_RANGE`, `DETECTION_SHAPE`, or `MAX_FALL_DISTANCE` to fit your game before building with Rojo.
 
 ## New Features (added by Nejinumanuma)
-* **R6 avatar support** - both R6 and R15 characters are handled correctly.
+* **Avatar support** - both R6 and R15 characters are handled correctly.
 * **Simple replication** - player orientation is replicated between clients via `Wallstick.Replication`.
 * **Runtime streaming check** - the client warns when `StreamingEnabled` is on.
+* **Terrain support** - players can now walk on terrain (still under testing)
 
 ## Limitations
 * StreamingEnabled must be turned off. The system is not designed for streaming-enabled places.
