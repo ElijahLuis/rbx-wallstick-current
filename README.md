@@ -2,17 +2,29 @@
 A modular system for sticking characters to walls, ceilings, and terrain surfaces in Roblox.  
 Originally created by [EgoMoose](https://github.com/EgoMoose) and modernized by **Nejinumanuma**(https://github.com/ElijahLuis).
 
-## How It Works
-1. The server sets up collision groups, patches `StarterPlayerScripts` with a
-camera modifier, and starts the replication service. 
-2. When the local character spawns, `clientEntry.client` constructs a `Wallstick` instance. 
-It creates a stripped clone of the character using `CharacterHelper` and aligns this "fake"
-model to nearby surfaces found via raycasts. 
-3. AlignPosition and AlignOrientation then pull the real humanoid to match, while `GravityCamera`- 
-augmented by the camera modifier - rotates the view and `RotationSpring` smooths motion. 
-5. The current surface part and offset are sent through `Wallstick.Replication` so the
-server can relay orientation to other clients. Parameters like stick range and
-fall timing come from `WallstickConfig`.
+## 🧠 How It Works
+Wallstick allows characters to walk on arbitrary surfaces using a combination of raycasting, alignment constraints, and camera manipulation.
+
+### Server
+- Sets up collision groups
+- Patches `StarterPlayerScripts` with a custom camera modifier
+- Starts the replication service
+
+### Client
+- On character spawn, `clientEntry.client` creates a `Wallstick` instance
+- A stripped-down clone of the character is created via `CharacterHelper`
+- This "fake" model is aligned to nearby surfaces using raycasts
+- `AlignPosition` and `AlignOrientation` guide the real character to match
+- `GravityCamera` rotates the camera, smoothed with `RotationSpring`
+
+### Replication
+- Surface and offset data are sent through `Wallstick.Replication` so other clients can match orientation
+
+### Configuration
+- Tweak movement parameters via `ReplicatedStorage.WallstickConfig`:
+  - `STICK_RANGE`
+  - `DETECTION_SHAPE`
+  - `MAX_FALL_DISTANCE`
 
 ## Demo
 A ready-made place to test the Wallstick module can be found at `demo/playground.rbxl`. 
@@ -22,15 +34,14 @@ You can also find videos created by EgoMoose which shows how it works:
 - Example 3: https://github.com/user-attachments/assets/c6d9a53d-f6c2-4924-9286-728e21b92ee8
 
 ## Installation
-This module uses the Roblox open-source toolchain:  
-**wally** for dependency management, **rojo** for syncing/building, and optionally **lune** for type safety.
+Wallstick uses the Roblox open-source toolchain:
 
-1. Install the tools. Make sure they are available on your `PATH` or managed with [Rokit](https://github.com/rojo-rbx/rokit):
+- [Wally](https://github.com/UpliftGames/wally) – dependency management  
+- [Rojo](https://rojo.space) – syncing/building  
+- [Lune](https://lune-lang.org) *(optional)* – type safety  
+- [Rokit](https://github.com/LPGhatguy/rokit) *(optional)* – tool manager
 
-- [Wally](https://github.com/UpliftGames/wally)
-- [Rojo](https://github.com/rojo-rbx/rojo). Also install the Roblox Studio plugin.
-- [Lune](https://github.com/lune-org/lune/releases).
-
+1. Install Wally, Rojo, and optionally Lune
 2. From the repository root, run `wally install` to fetch Lua dependencies. 
 3. Start a live session with `rojo serve`. Then use the Rojo plugin on Roblox Studio to sync your session. 
 
