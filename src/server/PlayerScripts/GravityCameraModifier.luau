@@ -77,8 +77,16 @@ end
 --
 
 return function(PlayerModule: any)
-	------------
-	local cameraUtils = require(PlayerModule.CameraModule.CameraUtils) :: any
+       local cam = workspace.CurrentCamera
+       if cam and type((cam :: any).ApplyVRTransform) ~= "function" then
+               (cam :: any).ApplyVRTransform = function(_: any, transform: CFrame?)
+                       if typeof(transform) == "CFrame" then
+                               cam.CFrame *= transform
+                       end
+               end
+       end
+       ------------
+       local cameraUtils = require(PlayerModule.CameraModule.CameraUtils) :: any
 
 	function cameraUtils.GetAngleBetweenXZVectors(v1: Vector3, v2: Vector3): number
 		v1 = upCFrame:VectorToObjectSpace(v1)

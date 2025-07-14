@@ -17,7 +17,19 @@ local function patchCameraModule(cameraModule: any)
         end
 end
 
+local function patchCurrentCamera()
+       local cam = workspace.CurrentCamera
+       if cam and type((cam :: any).ApplyVRTransform) ~= "function" then
+               (cam :: any).ApplyVRTransform = function(_: any, transform: CFrame?)
+                       if typeof(transform) == "CFrame" then
+                               cam.CFrame *= transform
+                       end
+               end
+       end
+end
+
 local function tryPatch(): boolean?
+       patchCurrentCamera()
 	local player = Players.LocalPlayer
 	if not player then
 		return nil
