@@ -1,5 +1,5 @@
 --!strict
-
+return function(PlayerModule: any)
 local transitionRate: number = 1
 
 local upCFrame: CFrame = CFrame.identity
@@ -74,12 +74,7 @@ local function calculateSpinStep(_dt: number, inVehicle: boolean)
 	prevSpinCFrame = spinPart.CFrame
 end
 
---
-
-return function(PlayerModule: any)
-	------------
 	local cameraUtils = require(PlayerModule.CameraModule.CameraUtils) :: any
-
 	function cameraUtils.GetAngleBetweenXZVectors(v1: Vector3, v2: Vector3): number
 		v1 = upCFrame:VectorToObjectSpace(v1)
 		v2 = upCFrame:VectorToObjectSpace(v2)
@@ -152,27 +147,6 @@ return function(PlayerModule: any)
 	local cameraObject = require(PlayerModule.CameraModule) :: any
 	local cameraInput = require(PlayerModule.CameraModule.CameraInput) :: any
 
-	--[[
-Some PlayerScriptsLoader implementations expect ApplyVRTransform to exist
-on the CameraModule table before any controllers initialize. When running in
-Studio without VR, this method may be missing which results in runtime
-errors. Define a no-op handler early and expose it through both the camera
-object instance and the CameraModule table for safety.
-]]
-	if cameraObject.ApplyVRTransform == nil then
-		local function defaultApplyVRTransform(self: any, ...)
-			if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
-				return self.activeCameraController:ApplyVRTransform(...)
-			end
-			-- If no handler exists, silently do nothing.
-			return nil
-		end
-
-		cameraObject.ApplyVRTransform = defaultApplyVRTransform
-		-- The returned module table is patched above. Avoid setting fields directly on
-		-- the ModuleScript instance because Instances cannot have arbitrary members.
-	end
-
 	function cameraObject:GetUpVector(): Vector3
 		return upVector
 	end
@@ -203,18 +177,6 @@ object instance and the CameraModule table for safety.
 
 	function cameraObject:GetRotationType(): Enum.RotationType
 		return currentRotationType
-	end
-
-	-- Stub implementation for compatibility with PlayerScriptsLoader.
-	-- The default PlayerModule exposes ApplyVRTransform for VR updates.
-	-- Some versions may call this method even when VR is unused, so we
-	-- forward the call to the active camera controller if available.
-	function cameraObject:ApplyVRTransform(...)
-		if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
-			return self.activeCameraController:ApplyVRTransform(...)
-		end
-		-- If no handler exists, silently do nothing.
-		return nil
 	end
 
 	function cameraObject:Update(dt: number)
@@ -260,4 +222,5 @@ object instance and the CameraModule table for safety.
 			end
 		end
 	end
+	
 end
