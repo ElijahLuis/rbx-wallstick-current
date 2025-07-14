@@ -1,5 +1,5 @@
 --!strict
-
+return function(PlayerModule: any)
 local transitionRate: number = 1
 
 local upCFrame: CFrame = CFrame.identity
@@ -74,6 +74,7 @@ local function calculateSpinStep(_dt: number, inVehicle: boolean)
 	prevSpinCFrame = spinPart.CFrame
 end
 
+	local cameraUtils = require(PlayerModule.CameraModule.CameraUtils) :: any
 	function cameraUtils.GetAngleBetweenXZVectors(v1: Vector3, v2: Vector3): number
 		v1 = upCFrame:VectorToObjectSpace(v1)
 		v2 = upCFrame:VectorToObjectSpace(v2)
@@ -221,4 +222,5 @@ end
 			end
 		end
 	end
+	
 end
