@@ -30,7 +30,6 @@ function PlayerScriptsModule.setup()
 
 	replaceIfPresent(StarterCharacterScripts, script.Animate:Clone())
 	replaceIfPresent(StarterPlayerScripts, renamedCharacterSounds)
-	-- replaceIfPresent(StarterPlayerScripts, script["00_VRTransformFix"]:Clone())
 end
 
 return PlayerScriptsModule

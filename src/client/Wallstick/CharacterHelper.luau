@@ -1,7 +1,6 @@
 --!strict
 
 local Players = game:GetService("Players")
-
 local PlayerScripts = Players.LocalPlayer:WaitForChild("PlayerScripts")
 local RbxCharacterSounds = PlayerScripts:WaitForChild("RbxCharacterSounds")
 local CharacterSoundsController = require(RbxCharacterSounds:WaitForChild("Controller")) :: any

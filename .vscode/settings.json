@@ -1,11 +1,11 @@
 {
 	"[lua]": {
 		"editor.formatOnSave": true,
-		"editor.defaultFormatter": "Koihik.vscode-lua-format"
+		"editor.defaultFormatter": "JohnnyMorganz.stylua"
 	},
 	"[luau]": {
 		"editor.formatOnSave": true,
-		"editor.defaultFormatter": "Koihik.vscode-lua-format"
+		"editor.defaultFormatter": "JohnnyMorganz.stylua"
 	},
 	"luau-lsp.require.mode": "relativeToFile",
 }
