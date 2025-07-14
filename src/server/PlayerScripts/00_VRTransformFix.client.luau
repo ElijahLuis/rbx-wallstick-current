@@ -4,34 +4,47 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local function patchCameraModule(cameraModule: any)
-	if cameraModule.ApplyVRTransform == nil then
-		local function fallback(self: any, ...)
-			if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
-				return self.activeCameraController:ApplyVRTransform(...)
-			end
-			return nil
+	local function fallback(self: any, ...)
+		if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
+			return self.activeCameraController:ApplyVRTransform(...)
 		end
-
-		cameraModule.ApplyVRTransform = fallback
-
-		-- Also provide the method through a metatable so colon calls succeed
-		local mt = getmetatable(cameraModule) or {}
-		local originalIndex = mt.__index
-		mt.__index = function(t, k)
-			if k == "ApplyVRTransform" then
-				return fallback
-			end
-			if originalIndex then
-				if type(originalIndex) == "function" then
-					return originalIndex(t, k)
-				else
-					return originalIndex[k]
-				end
-			end
-			return nil
-		end
-		setmetatable(cameraModule, mt)
+		return nil
 	end
+
+	local function applyTo(object: any)
+		if object.ApplyVRTransform == nil then
+			object.ApplyVRTransform = fallback
+		end
+	end
+
+	applyTo(cameraModule)
+
+	if type(cameraModule.new) == "function" then
+		local originalNew = cameraModule.new
+		cameraModule.new = function(...)
+			local obj = originalNew(...)
+			applyTo(obj)
+			return obj
+		end
+	end
+
+	-- Also provide the method through a metatable so colon calls succeed
+	local mt = getmetatable(cameraModule) or {}
+	local originalIndex = mt.__index
+	mt.__index = function(t, k)
+		if k == "ApplyVRTransform" then
+			return fallback
+		end
+		if originalIndex then
+			if type(originalIndex) == "function" then
+				return originalIndex(t, k)
+			else
+				return originalIndex[k]
+			end
+		end
+		return nil
+	end
+	setmetatable(cameraModule, mt)
 end
 
 local function tryPatch(): boolean?
