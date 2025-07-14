@@ -48,9 +48,11 @@ for _, player in ipairs(Players:GetPlayers()) do
 	onPlayerAdded(player)
 end
 
-RunService.Heartbeat:Connect(function()
+
+RunService.Heartbeat:Connect(function(dt)
 	for _, controller in pairs(controllers) do
-		controller:update()
+		controller:update(dt)
+
 	end
 end)
 

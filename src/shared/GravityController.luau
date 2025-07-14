@@ -8,6 +8,11 @@ export type GravityController = {
 	planetsFolder: Folder,
 	force: VectorForce,
 	orientation: AlignOrientation,
+
+	fallTime: number,
+	prevDistance: number?,
+	outPlanet: BasePart?,
+
 }
 
 local GravityController = {}
@@ -22,7 +27,14 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 
 	assert(self.root and self.humanoid, "GravityController: character missing required parts")
 
-	local attachment = self.root:WaitForChild("RootAttachment", 5)
+
+	local attachment = self.root:FindFirstChild("RootAttachment")
+	if not attachment then
+		attachment = Instance.new("Attachment")
+		attachment.Name = "RootAttachment"
+		attachment.Parent = self.root
+	end
+
 
 	local force = Instance.new("VectorForce")
 	force.Attachment0 = attachment
@@ -40,6 +52,11 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 	orient.Enabled = false
 	orient.Parent = self.root
 	self.orientation = orient
+
+
+	self.fallTime = 0
+	self.prevDistance = nil
+	self.outPlanet = nil
 
 	return self
 end
@@ -67,7 +84,10 @@ local function findNearestPlanet(planets: Folder, position: Vector3)
 	return closest
 end
 
-function GravityController:update()
+
+function GravityController:update(dt: number)
+
+
 	if self.humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
 		if self.force.Enabled then
 			self.force.Enabled = false
@@ -76,10 +96,55 @@ function GravityController:update()
 		if self.orientation.Enabled then
 			self.orientation.Enabled = false
 		end
+
+		self.fallTime = 0
+		self.prevDistance = nil
+		self.outPlanet = nil
+
 		return
 	end
 
 	local planet = findNearestPlanet(self.planetsFolder, self.root.Position)
+
+	local distance = planet and (planet.Position - self.root.Position).Magnitude or nil
+
+	if self.outPlanet and planet == self.outPlanet then
+		if distance and self.prevDistance and distance >= self.prevDistance then
+			local dir = (self.outPlanet.Position - self.root.Position).Unit
+			local offset = dir * (self.outPlanet.Size.Magnitude / 2 + 50)
+			self.root.AssemblyLinearVelocity = Vector3.zero
+			self.root.CFrame = CFrame.new(self.outPlanet.Position + offset)
+		end
+		self.outPlanet = nil
+		self.fallTime = 0
+	end
+
+	if distance then
+		if self.prevDistance and distance > self.prevDistance then
+			self.fallTime += dt
+		else
+			self.fallTime = 0
+		end
+		self.prevDistance = distance
+	else
+		self.fallTime += dt
+	end
+
+	if self.fallTime >= Config.OUT_OF_BOUNDS_TIME or (distance and distance > Config.OUT_OF_BOUNDS_DISTANCE) then
+		if planet then
+			local dir = (planet.Position - self.root.Position).Unit
+			local speed = self.root.AssemblyLinearVelocity.Magnitude
+			self.root.AssemblyLinearVelocity = dir * speed
+			self.force.Enabled = false
+			self.force.Force = Vector3.zero
+			self.orientation.Enabled = false
+			self.outPlanet = planet
+			self.prevDistance = distance
+		end
+		self.fallTime = 0
+		return
+	end
+
 	if planet then
 		local direction = (planet.Position - self.root.Position).Unit
 		self.force.Force = direction * self.root.AssemblyMass * Config.PLANET_GRAVITY
