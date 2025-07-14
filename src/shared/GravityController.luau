@@ -17,10 +17,12 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 	local self = setmetatable({}, GravityController)
 
 	self.planetsFolder = planetsFolder
-	self.root = character:WaitForChild("HumanoidRootPart")
-	self.humanoid = character:WaitForChild("Humanoid")
+	self.root = character:WaitForChild("HumanoidRootPart", 5)
+	self.humanoid = character:WaitForChild("Humanoid", 5)
 
-	local attachment = self.root:WaitForChild("RootAttachment")
+	assert(self.root and self.humanoid, "GravityController: character missing required parts")
+
+	local attachment = self.root:WaitForChild("RootAttachment", 5)
 
 	local force = Instance.new("VectorForce")
 	force.Attachment0 = attachment
