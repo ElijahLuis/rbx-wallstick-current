@@ -1,7 +1,6 @@
 --!strict
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 
 local function patchCameraModule(cameraModule: any)
 	local function fallback(self: any, ...)
@@ -47,36 +46,44 @@ local function patchCameraModule(cameraModule: any)
 	setmetatable(cameraModule, mt)
 end
 
-local function tryPatch(): boolean?
-	local player = Players.LocalPlayer or Players.PlayerAdded:Wait()
-
-	local playerScripts = player:WaitForChild("PlayerScripts")
-	local playerModule = playerScripts:WaitForChild("PlayerModule")
-
-	-- The CameraModule is nested inside a folder of the same name. Grab the
-	-- actual ModuleScript before requiring.
+local function attachPlayerModule(playerModule: Instance)
+	-- Grab the actual camera ModuleScript which may be nested in a folder
 	local cameraFolder = playerModule:WaitForChild("CameraModule")
 	local cameraScript = if cameraFolder:IsA("ModuleScript")
 		then cameraFolder
 		else cameraFolder:WaitForChild("CameraModule")
 
-	local success, cameraModule = pcall(require, cameraScript)
-	if success and type(cameraModule) == "table" then
+	local ok, cameraModule = pcall(require, cameraScript)
+	if ok and type(cameraModule) == "table" then
 		patchCameraModule(cameraModule)
-	else
-		return nil
 	end
 
-	local successPm, pmTable = pcall(require, playerModule)
-	if successPm and type(pmTable) == "table" and type(pmTable.CameraModule) == "table" then
+	local okPm, pmTable = pcall(require, playerModule)
+	if okPm and type(pmTable) == "table" and type(pmTable.CameraModule) == "table" then
 		patchCameraModule(pmTable.CameraModule)
 	end
-
-	RunService:UnbindFromRenderStep("VRTransformFix")
-	return true
 end
 
--- Attempt immediately and keep retrying each render step until patched
-if not tryPatch() then
-	RunService:BindToRenderStep("VRTransformFix", Enum.RenderPriority.First.Value, tryPatch)
+local function onPlayerScripts(playerScripts: Instance)
+	if playerScripts:FindFirstChild("PlayerModule") then
+		attachPlayerModule(playerScripts.PlayerModule)
+	end
+
+	playerScripts.ChildAdded:Connect(function(child)
+		if child.Name == "PlayerModule" then
+			attachPlayerModule(child)
+		end
+	end)
+end
+
+local player = Players.LocalPlayer or Players.PlayerAdded:Wait()
+
+if player:FindFirstChild("PlayerScripts") then
+	onPlayerScripts(player.PlayerScripts)
+else
+	player.ChildAdded:Connect(function(child)
+		if child.Name == "PlayerScripts" then
+			onPlayerScripts(child)
+		end
+	end)
 end
