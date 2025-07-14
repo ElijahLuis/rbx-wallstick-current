@@ -1,6 +1,6 @@
 # Roblox Wallstick (Modernized)
 A modular system for sticking characters to walls, ceilings, and terrain surfaces in Roblox.  
-Originally created by [EgoMoose](https://github.com/EgoMoose) and modernized by **Nejinumanuma**(https://github.com/ElijahLuis).
+Originally created by [EgoMoose](https://github.com/EgoMoose) and modernized by [Nejinumanuma](https://github.com/ElijahLuis).
 
 ## 🧠 How It Works
 Wallstick allows characters to walk on arbitrary surfaces using a combination of raycasting, alignment constraints, and camera manipulation.
