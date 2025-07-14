@@ -35,22 +35,19 @@ local function patchCameraModule(cameraModule: any)
 end
 
 local function tryPatch(): boolean?
-	local player = Players.LocalPlayer
-	if not player then
-		return nil
-	end
+	local player = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
-	local playerScripts = player:FindFirstChild("PlayerScripts")
-	if not playerScripts then
-		return nil
-	end
+	local playerScripts = player:WaitForChild("PlayerScripts")
+	local playerModule = playerScripts:WaitForChild("PlayerModule")
 
-	local playerModule = playerScripts:FindFirstChild("PlayerModule")
-	if not playerModule then
-		return nil
-	end
+	-- The CameraModule is nested inside a folder of the same name. Grab the
+	-- actual ModuleScript before requiring.
+	local cameraFolder = playerModule:WaitForChild("CameraModule")
+	local cameraScript = if cameraFolder:IsA("ModuleScript")
+		then cameraFolder
+		else cameraFolder:WaitForChild("CameraModule")
 
-	local success, cameraModule = pcall(require, playerModule:FindFirstChild("CameraModule"))
+	local success, cameraModule = pcall(require, cameraScript)
 	if success and type(cameraModule) == "table" then
 		patchCameraModule(cameraModule)
 	else
