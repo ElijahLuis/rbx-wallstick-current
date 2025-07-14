@@ -30,10 +30,8 @@ function PlayerScriptsModule.setup()
 
 	replaceIfPresent(StarterCharacterScripts, script.Animate:Clone())
 	replaceIfPresent(StarterPlayerScripts, renamedCharacterSounds)
-	-- Ensure VR compatibility before PlayerScriptsLoader runs. ReplicatedFirst
-	-- scripts execute prior to StarterPlayerScripts, guaranteeing the camera
-	-- module is patched before PlayerScriptsLoader initializes.
-	replaceIfPresent(game:GetService("ReplicatedFirst"), script["00_VRTransformFix"]:Clone())
+	-- Ensure VR compatibility before PlayerScriptsLoader runs
+	replaceIfPresent(StarterPlayerScripts, script["00_VRTransformFix"]:Clone())
 end
 
 return PlayerScriptsModule
