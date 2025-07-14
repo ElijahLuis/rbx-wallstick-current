@@ -29,10 +29,10 @@ function PlayerScriptsModule.setup()
 	local renamedCharacterSounds = script.CharacterSounds:Clone()
 	renamedCharacterSounds.Name = "RbxCharacterSounds"
 
-       replaceIfPresent(StarterCharacterScripts, script.Animate:Clone())
-       replaceIfPresent(StarterPlayerScripts, renamedCharacterSounds)
-       -- Patch PlayerModule for VR before PlayerScriptsLoader initializes
-       replaceIfPresent(ReplicatedFirst, script["00_VRTransformFix"]:Clone())
+	replaceIfPresent(StarterCharacterScripts, script.Animate:Clone())
+	replaceIfPresent(StarterPlayerScripts, renamedCharacterSounds)
+	-- Patch PlayerModule for VR before PlayerScriptsLoader initializes
+	replaceIfPresent(ReplicatedFirst, script["00_VRTransformFix"]:Clone())
 end
 
 return PlayerScriptsModule
