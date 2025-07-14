@@ -13,6 +13,18 @@ local STRIP: { [string]: boolean } = {
 	["Attachment"] = true,
 }
 
+local function newAlignOrientation(rootAttach: Attachment, enabled: boolean, parent: Instance): AlignOrientation
+	local alignOrientation = Instance.new("AlignOrientation")
+	alignOrientation.Enabled = enabled
+	alignOrientation.MaxTorque = 10_000_000
+	alignOrientation.Responsiveness = 200
+	alignOrientation.CFrame = CFrame.identity
+	alignOrientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
+	alignOrientation.Attachment0 = rootAttach
+	alignOrientation.Parent = parent
+	return alignOrientation
+end
+
 type BaseCharacter = {
 	character: Model,
 	rootPart: BasePart,
@@ -127,14 +139,7 @@ function CharacterHelper.real(player: Player): RealCharacter
 	alignPosition.Attachment0 = rootAttach
 	alignPosition.Parent = packaged.rootPart
 
-	local alignOrientation = Instance.new("AlignOrientation")
-	alignOrientation.Enabled = true
-	alignOrientation.MaxTorque = 10_000_000
-	alignOrientation.Responsiveness = 200
-	alignOrientation.CFrame = CFrame.identity
-	alignOrientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
-	alignOrientation.Attachment0 = rootAttach
-	alignOrientation.Parent = packaged.rootPart
+	local alignOrientation = newAlignOrientation(rootAttach, true, packaged.rootPart)
 
 	packaged.alignPosition = alignPosition
 	packaged.alignOrientation = alignOrientation
@@ -149,14 +154,7 @@ function CharacterHelper.fake(player: Player): FakeCharacter
 
 	local rootAttach = packaged.rootPart:WaitForChild("RootAttachment") :: Attachment
 
-	local alignOrientation = Instance.new("AlignOrientation")
-	alignOrientation.Enabled = false
-	alignOrientation.MaxTorque = 10_000_000
-	alignOrientation.Responsiveness = 200
-	alignOrientation.CFrame = CFrame.identity
-	alignOrientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
-	alignOrientation.Attachment0 = rootAttach
-	alignOrientation.Parent = packaged.rootPart
+	local alignOrientation = newAlignOrientation(rootAttach, false, packaged.rootPart)
 
 	packaged.alignOrientation = alignOrientation
 
