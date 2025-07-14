@@ -1,52 +1,41 @@
 --!strict
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+local originalRequire = require
 
-local function patchCameraModule(cameraModule: any)
-	if cameraModule.ApplyVRTransform == nil then
-		function cameraModule:ApplyVRTransform(...)
-			if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
-				return self.activeCameraController:ApplyVRTransform(...)
+local function defaultApplyVRTransform(self: any, ...)
+	if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
+		return self.activeCameraController:ApplyVRTransform(...)
+	end
+	return nil
+end
+
+function require(moduleScript: ModuleScript, ...)
+	local result = originalRequire(moduleScript, ...)
+
+	if moduleScript.Name == "CameraModule" and type(result) == "table" then
+		if result.ApplyVRTransform == nil then
+			result.ApplyVRTransform = defaultApplyVRTransform
+		end
+
+		local parent = moduleScript.Parent
+		if parent and parent:IsA("ModuleScript") then
+			local ok, parentTable = pcall(originalRequire, parent)
+			if ok and type(parentTable) == "table" and parentTable.CameraModule then
+				if parentTable.CameraModule.ApplyVRTransform == nil then
+					parentTable.CameraModule.ApplyVRTransform = result.ApplyVRTransform
+				end
 			end
-			return nil
+		end
+	elseif moduleScript.Name == "PlayerModule" and type(result) == "table" then
+		if result.CameraModule and type(result.CameraModule) == "table" then
+			if result.CameraModule.ApplyVRTransform == nil then
+				local ok, cameraTable = pcall(originalRequire, moduleScript:WaitForChild("CameraModule"))
+				if ok and type(cameraTable) == "table" and cameraTable.ApplyVRTransform then
+					result.CameraModule.ApplyVRTransform = cameraTable.ApplyVRTransform
+				end
+			end
 		end
 	end
-end
 
-local function tryPatch(): boolean?
-	local player = Players.LocalPlayer
-	if not player then
-		return nil
-	end
-
-	local playerScripts = player:FindFirstChild("PlayerScripts")
-	if not playerScripts then
-		return nil
-	end
-
-	local playerModule = playerScripts:FindFirstChild("PlayerModule")
-	if not playerModule then
-		return nil
-	end
-
-	local success, cameraModule = pcall(require, playerModule:FindFirstChild("CameraModule"))
-	if success and type(cameraModule) == "table" then
-		patchCameraModule(cameraModule)
-	else
-		return nil
-	end
-
-	local successPm, pmTable = pcall(require, playerModule)
-	if successPm and type(pmTable) == "table" and type(pmTable.CameraModule) == "table" then
-		patchCameraModule(pmTable.CameraModule)
-	end
-
-	RunService:UnbindFromRenderStep("VRTransformFix")
-	return true
-end
-
--- Attempt immediately and keep retrying each render step until patched
-if not tryPatch() then
-	RunService:BindToRenderStep("VRTransformFix", Enum.RenderPriority.First.Value, tryPatch)
+	return result
 end

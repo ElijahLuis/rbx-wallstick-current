@@ -31,8 +31,8 @@ function PlayerScriptsModule.setup()
 
 	replaceIfPresent(StarterCharacterScripts, script.Animate:Clone())
 	replaceIfPresent(StarterPlayerScripts, renamedCharacterSounds)
-	-- Patch PlayerModule for VR before PlayerScriptsLoader initializes
-	replaceIfPresent(StarterPlayerScripts, script["00_VRTransformFix"]:Clone())
+	-- Run the VR patch from ReplicatedFirst so it executes before PlayerScriptsLoader
+	replaceIfPresent(ReplicatedFirst, script["00_VRTransformFix"]:Clone())
 end
 
 return PlayerScriptsModule
