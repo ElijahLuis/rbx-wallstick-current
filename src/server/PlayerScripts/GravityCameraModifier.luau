@@ -74,20 +74,6 @@ local function calculateSpinStep(_dt: number, inVehicle: boolean)
 	prevSpinCFrame = spinPart.CFrame
 end
 
---
-
-return function(PlayerModule: any)
-       local cam = workspace.CurrentCamera
-       if cam and type((cam :: any).ApplyVRTransform) ~= "function" then
-               (cam :: any).ApplyVRTransform = function(_: any, transform: CFrame?)
-                       if typeof(transform) == "CFrame" then
-                               cam.CFrame *= transform
-                       end
-               end
-       end
-       ------------
-       local cameraUtils = require(PlayerModule.CameraModule.CameraUtils) :: any
-
 	function cameraUtils.GetAngleBetweenXZVectors(v1: Vector3, v2: Vector3): number
 		v1 = upCFrame:VectorToObjectSpace(v1)
 		v2 = upCFrame:VectorToObjectSpace(v2)
@@ -160,30 +146,6 @@ return function(PlayerModule: any)
 	local cameraObject = require(PlayerModule.CameraModule) :: any
 	local cameraInput = require(PlayerModule.CameraModule.CameraInput) :: any
 
-	--[[
-Some PlayerScriptsLoader implementations expect ApplyVRTransform to exist
-on the CameraModule table before any controllers initialize. When running in
-Studio without VR, this method may be missing which results in runtime
-errors. Define a no-op handler early and expose it through both the camera
-object instance and the CameraModule table for safety.
-]]
-        if cameraObject.ApplyVRTransform == nil then
-                -- Camera:ApplyVRTransform no longer exists on modern Roblox cameras.
-                -- Provide a compatibility shim that applies the transform to the
-                -- current camera CFrame so older loaders continue to function.
-                local function defaultApplyVRTransform(_: any, transform: CFrame?)
-                        if typeof(transform) == "CFrame" then
-                                local cam = workspace.CurrentCamera
-                                cam.CFrame *= transform
-                        end
-                        return nil
-                end
-
-                cameraObject.ApplyVRTransform = defaultApplyVRTransform
-                -- The returned module table is patched above. Avoid setting fields directly on
-                -- the ModuleScript instance because Instances cannot have arbitrary members.
-        end
-
 	function cameraObject:GetUpVector(): Vector3
 		return upVector
 	end
@@ -215,17 +177,6 @@ object instance and the CameraModule table for safety.
 	function cameraObject:GetRotationType(): Enum.RotationType
 		return currentRotationType
 	end
-
-        -- Provide a modern replacement for the deprecated Camera:ApplyVRTransform
-        -- API. Older loaders may invoke this method, so mimic the previous
-        -- behavior by directly offsetting the current camera's CFrame.
-        function cameraObject:ApplyVRTransform(transform: CFrame?)
-                if typeof(transform) == "CFrame" then
-                        local cam = workspace.CurrentCamera
-                        cam.CFrame *= transform
-                end
-                return nil
-        end
 
 	function cameraObject:Update(dt: number)
 		if self.activeCameraController then
