@@ -77,10 +77,12 @@ local function onCharacterAdded(character: Model)
 
 	local cleanupDoubleJump = DoubleJump.setup(wallstick.fake.humanoid, wallstick.real.humanoid)
 	local fallTime = 0
+	local outOfBounds = false
 
+	local planetsFolder = workspace:WaitForChild("Planets")
 	local function getPlanets()
 		local list = {}
-		for _, obj in ipairs(workspace:GetChildren()) do
+		for _, obj in ipairs(planetsFolder:GetChildren()) do
 			if obj:IsA("BasePart") and obj.Name:sub(1, 6) == "Planet" then
 				table.insert(list, obj)
 			end
@@ -144,7 +146,9 @@ local function onCharacterAdded(character: Model)
 				local part = (surface.Instance :: BasePart).AssemblyRootPart
 				local normal = part.CFrame:VectorToObjectSpace(surface.Normal)
 				wallstick:setAndPivot(part, normal, surface.Position)
+				hrp.AssemblyLinearVelocity = Vector3.zero
 				fallTime = 0
+				outOfBounds = false
 			end
 		end
 	end)
@@ -177,29 +181,39 @@ local function onCharacterAdded(character: Model)
 			local stickNormal = stickPart.CFrame:VectorToObjectSpace(result.Normal)
 
 			wallstick:setAndPivot(stickPart, stickNormal, result.Position)
+			hrp.AssemblyLinearVelocity = Vector3.zero
 			fallTime = 0
+			outOfBounds = false
 		else
-			if humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+			local state = wallstick.fake.humanoid:GetState()
+			if state == Enum.HumanoidStateType.Freefall then
 				fallTime += dt
-
-				if fallTime >= Config.RESPAWN_TIME then
-					if spawnLocation then
-						hrp.AssemblyLinearVelocity = Vector3.zero
-						hrp.CFrame = spawnLocation.CFrame
-							* CFrame.new(0, spawnLocation.Size.Y / 2 + humanoid.HipHeight, 0)
-						wallstick:set(workspace.Terrain, Vector3.yAxis)
-					end
-					fallTime = 0
-				elseif fallTime >= Config.OUT_OF_BOUNDS_TIME then
-					local planet = findNearestPlanet()
-					if planet then
-						local direction = (planet.Position - hrp.Position).Unit
-						local speed = hrp.AssemblyLinearVelocity.Magnitude
-						hrp.AssemblyLinearVelocity = direction * speed
-					end
-				end
 			else
 				fallTime = 0
+			end
+
+			local planet = findNearestPlanet()
+			local distance = if planet then (planet.Position - hrp.Position).Magnitude else math.huge
+
+			if fallTime >= Config.RESPAWN_TIME then
+				if spawnLocation then
+					hrp.AssemblyLinearVelocity = Vector3.zero
+					hrp.CFrame = spawnLocation.CFrame * CFrame.new(0, spawnLocation.Size.Y / 2 + humanoid.HipHeight, 0)
+					wallstick:set(workspace.Terrain, Vector3.yAxis)
+				end
+				fallTime = 0
+				outOfBounds = false
+			elseif
+				not outOfBounds and (fallTime >= Config.OUT_OF_BOUNDS_TIME or distance > Config.OUT_OF_BOUNDS_DISTANCE)
+			then
+				if planet then
+					local direction = (planet.Position - hrp.Position).Unit
+					local speed = hrp.AssemblyLinearVelocity.Magnitude
+					hrp.AssemblyLinearVelocity = direction * speed
+				end
+				outOfBounds = true
+			elseif outOfBounds and planet and distance < Config.OUT_OF_BOUNDS_DISTANCE then
+				outOfBounds = false
 			end
 		end
 	end)
