@@ -1,78 +1,69 @@
 --!strict
 return function(PlayerModule: any)
-local transitionRate: number = 1
+	local transitionRate: number = 1
 
-local upCFrame: CFrame = CFrame.identity
-local upVector: Vector3 = upCFrame.YVector
-local targetUpVector: Vector3 = upVector
-local twistCFrame: CFrame = CFrame.identity
+	local upCFrame: CFrame = CFrame.identity
+	local upVector: Vector3 = upCFrame.YVector
+	local targetUpVector: Vector3 = upVector
+	local twistCFrame: CFrame = CFrame.identity
 
-local spinPart: BasePart = workspace.Terrain
-local prevSpinPart: BasePart = spinPart
-local prevSpinCFrame: CFrame = spinPart.CFrame
+	local spinPart: BasePart = workspace.Terrain
+	local prevSpinPart: BasePart = spinPart
+	local prevSpinCFrame: CFrame = spinPart.CFrame
 
-local UserGameSettings = UserSettings():GetService("UserGameSettings")
+	local UserGameSettings = UserSettings():GetService("UserGameSettings")
 
---
+	--
 
-local function fromToRotation(from: Vector3, to: Vector3, backupUnitAxis: Vector3?)
-	local dot = from:Dot(to)
-	if dot < -0.99999 then
-		return if backupUnitAxis
-			then CFrame.fromAxisAngle(backupUnitAxis, math.pi)
-			else CFrame.fromRotationBetweenVectors(from, to)
-	end
-	local qv = from:Cross(to)
-	local qw = math.sqrt(from:Dot(from) * to:Dot(to)) + dot
-	return CFrame.new(0, 0, 0, qv.X, qv.Y, qv.Z, qw)
-end
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local RotationUtils = require(ReplicatedStorage:WaitForChild("RotationUtils"))
 
-local function swingTwist(inputCF: CFrame, relativeUnitAxis: Vector3)
-	local axis, theta = inputCF:ToAxisAngle()
-	local w, v = math.cos(theta / 2), math.sin(theta / 2) * axis
+	local function swingTwist(inputCF: CFrame, relativeUnitAxis: Vector3)
+		local axis, theta = inputCF:ToAxisAngle()
+		local w, v = math.cos(theta / 2), math.sin(theta / 2) * axis
 
-	local proj = v:Dot(relativeUnitAxis) * relativeUnitAxis
-	local twist = CFrame.new(0, 0, 0, proj.X, proj.Y, proj.Z, w)
+		local proj = v:Dot(relativeUnitAxis) * relativeUnitAxis
+		local twist = CFrame.new(0, 0, 0, proj.X, proj.Y, proj.Z, w)
 
-	local swing = inputCF * twist:Inverse()
+		local swing = inputCF * twist:Inverse()
 
-	return swing, twist
-end
-
-local function calculateUpStep(_dt: number)
-	local axis = workspace.CurrentCamera.CFrame.RightVector
-
-	local sphericalArc = fromToRotation(upVector, targetUpVector, axis)
-	local transitionCF = CFrame.new():Lerp(sphericalArc, transitionRate)
-
-	upVector = transitionCF * upVector
-	upCFrame = transitionCF * upCFrame
-end
-
-local function calculateSpinStep(_dt: number, inVehicle: boolean)
-	local theta = 0
-
-	if inVehicle then
-		theta = 0
-	elseif spinPart == prevSpinPart then
-		local rotation = spinPart.CFrame.Rotation
-		local prevRotation = prevSpinCFrame.Rotation
-
-		local delta = prevRotation:ToObjectSpace(rotation)
-		local spinAxis = delta:VectorToObjectSpace(prevRotation:VectorToObjectSpace(upVector))
-
-		local _swing, twist = swingTwist(delta, spinAxis)
-		local deltaAxis, _deltaTheta = delta:ToAxisAngle()
-		local _twistAxis, twistTheta = twist:ToAxisAngle()
-
-		theta = math.sign(deltaAxis:Dot(spinAxis)) * twistTheta
+		return swing, twist
 	end
 
-	twistCFrame = CFrame.fromEulerAnglesYXZ(0, theta, 0)
+	local function calculateUpStep(_dt: number)
+		local axis = workspace.CurrentCamera.CFrame.RightVector
 
-	prevSpinPart = spinPart
-	prevSpinCFrame = spinPart.CFrame
-end
+		local sphericalArc = RotationUtils.fromToRotation(upVector, targetUpVector, axis)
+		local transitionCF = CFrame.new():Lerp(sphericalArc, transitionRate)
+
+		upVector = transitionCF * upVector
+		upCFrame = transitionCF * upCFrame
+	end
+
+	local function calculateSpinStep(_dt: number, inVehicle: boolean)
+		local theta = 0
+
+		if inVehicle then
+			theta = 0
+		elseif spinPart == prevSpinPart then
+			local rotation = spinPart.CFrame.Rotation
+			local prevRotation = prevSpinCFrame.Rotation
+
+			local delta = prevRotation:ToObjectSpace(rotation)
+			local spinAxis = delta:VectorToObjectSpace(prevRotation:VectorToObjectSpace(upVector))
+
+			local _swing, twist = swingTwist(delta, spinAxis)
+			local deltaAxis, _deltaTheta = delta:ToAxisAngle()
+			local _twistAxis, twistTheta = twist:ToAxisAngle()
+
+			theta = math.sign(deltaAxis:Dot(spinAxis)) * twistTheta
+		end
+
+		twistCFrame = CFrame.fromEulerAnglesYXZ(0, theta, 0)
+
+		prevSpinPart = spinPart
+		prevSpinCFrame = spinPart.CFrame
+	end
 
 	local cameraUtils = require(PlayerModule.CameraModule.CameraUtils) :: any
 	function cameraUtils.GetAngleBetweenXZVectors(v1: Vector3, v2: Vector3): number
@@ -222,5 +213,4 @@ end
 			end
 		end
 	end
-	
 end
