@@ -1,6 +1,5 @@
 --!strict
 
-local RunService = game:GetService("RunService")
 local Config = require(script.Parent:WaitForChild("WallstickConfig"))
 
 export type GravityController = {
@@ -8,6 +7,7 @@ export type GravityController = {
 	humanoid: Humanoid,
 	planetsFolder: Folder,
 	force: VectorForce,
+	orientation: AlignOrientation,
 }
 
 local GravityController = {}
@@ -21,20 +21,30 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 	self.humanoid = character:WaitForChild("Humanoid")
 
 	local attachment = self.root:WaitForChild("RootAttachment")
+
 	local force = Instance.new("VectorForce")
 	force.Attachment0 = attachment
-	force.RelativeTo = Enum.ActuatorRelative.World
+	force.RelativeTo = Enum.ActuatorRelativeTo.World
 	force.Force = Vector3.zero
 	force.Enabled = false
 	force.Parent = self.root
-
 	self.force = force
+
+	local orient = Instance.new("AlignOrientation")
+	orient.Attachment0 = attachment
+	orient.Mode = Enum.OrientationAlignmentMode.OneAttachment
+	orient.MaxTorque = 1_000_000
+	orient.Responsiveness = 50
+	orient.Enabled = false
+	orient.Parent = self.root
+	self.orientation = orient
 
 	return self
 end
 
 function GravityController:destroy()
 	self.force:Destroy()
+	self.orientation:Destroy()
 end
 
 local function findNearestPlanet(planets: Folder, position: Vector3)
@@ -61,6 +71,9 @@ function GravityController:update()
 			self.force.Enabled = false
 			self.force.Force = Vector3.zero
 		end
+		if self.orientation.Enabled then
+			self.orientation.Enabled = false
+		end
 		return
 	end
 
@@ -69,10 +82,18 @@ function GravityController:update()
 		local direction = (planet.Position - self.root.Position).Unit
 		self.force.Force = direction * self.root.AssemblyMass * Config.PLANET_GRAVITY
 		self.force.Enabled = true
+
+		local up = -direction
+		local look = self.root.CFrame.LookVector
+		self.orientation.CFrame = CFrame.lookAt(self.root.Position, self.root.Position + look, up)
+		self.orientation.Enabled = true
 	else
 		if self.force.Enabled then
 			self.force.Enabled = false
 			self.force.Force = Vector3.zero
+		end
+		if self.orientation.Enabled then
+			self.orientation.Enabled = false
 		end
 	end
 end
