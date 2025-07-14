@@ -11,7 +11,7 @@ local Replication = require(script.Replication)
 local GravityCamera = require(script.GravityCamera)
 local RotationSpring = require(script.RotationSpring)
 local CharacterHelper = require(script.CharacterHelper)
-local RotationUtils = require(ReplicatedStorage:WaitForChild("RotationUtils"))
+local RotationUtils = require(script.RotationUtils)
 
 local globalRenderTicket = 0
 

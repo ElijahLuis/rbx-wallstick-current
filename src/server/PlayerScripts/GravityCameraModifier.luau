@@ -13,10 +13,9 @@ return function(PlayerModule: any)
 
 	local UserGameSettings = UserSettings():GetService("UserGameSettings")
 
-	--
+	local RotationUtils = require(game.ReplicatedStorage.Wallstick.RotationUtils)
 
-	local ReplicatedStorage = game:GetService("ReplicatedStorage")
-	local RotationUtils = require(ReplicatedStorage:WaitForChild("RotationUtils"))
+	--
 
 	local function swingTwist(inputCF: CFrame, relativeUnitAxis: Vector3)
 		local axis, theta = inputCF:ToAxisAngle()
