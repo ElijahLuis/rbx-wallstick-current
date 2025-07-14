@@ -159,19 +159,22 @@ Studio without VR, this method may be missing which results in runtime
 errors. Define a no-op handler early and expose it through both the camera
 object instance and the CameraModule table for safety.
 ]]
-	if cameraObject.ApplyVRTransform == nil then
-		local function defaultApplyVRTransform(self: any, ...)
-			if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
-				return self.activeCameraController:ApplyVRTransform(...)
-			end
-			-- If no handler exists, silently do nothing.
-			return nil
-		end
+        if cameraObject.ApplyVRTransform == nil then
+                -- Camera:ApplyVRTransform no longer exists on modern Roblox cameras.
+                -- Provide a compatibility shim that applies the transform to the
+                -- current camera CFrame so older loaders continue to function.
+                local function defaultApplyVRTransform(_: any, transform: CFrame?)
+                        if typeof(transform) == "CFrame" then
+                                local cam = workspace.CurrentCamera
+                                cam.CFrame *= transform
+                        end
+                        return nil
+                end
 
-		cameraObject.ApplyVRTransform = defaultApplyVRTransform
-		-- The returned module table is patched above. Avoid setting fields directly on
-		-- the ModuleScript instance because Instances cannot have arbitrary members.
-	end
+                cameraObject.ApplyVRTransform = defaultApplyVRTransform
+                -- The returned module table is patched above. Avoid setting fields directly on
+                -- the ModuleScript instance because Instances cannot have arbitrary members.
+        end
 
 	function cameraObject:GetUpVector(): Vector3
 		return upVector
@@ -205,17 +208,16 @@ object instance and the CameraModule table for safety.
 		return currentRotationType
 	end
 
-	-- Stub implementation for compatibility with PlayerScriptsLoader.
-	-- The default PlayerModule exposes ApplyVRTransform for VR updates.
-	-- Some versions may call this method even when VR is unused, so we
-	-- forward the call to the active camera controller if available.
-	function cameraObject:ApplyVRTransform(...)
-		if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
-			return self.activeCameraController:ApplyVRTransform(...)
-		end
-		-- If no handler exists, silently do nothing.
-		return nil
-	end
+        -- Provide a modern replacement for the deprecated Camera:ApplyVRTransform
+        -- API. Older loaders may invoke this method, so mimic the previous
+        -- behavior by directly offsetting the current camera's CFrame.
+        function cameraObject:ApplyVRTransform(transform: CFrame?)
+                if typeof(transform) == "CFrame" then
+                        local cam = workspace.CurrentCamera
+                        cam.CFrame *= transform
+                end
+                return nil
+        end
 
 	function cameraObject:Update(dt: number)
 		if self.activeCameraController then

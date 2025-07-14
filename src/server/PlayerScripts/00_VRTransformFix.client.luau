@@ -4,14 +4,17 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local function patchCameraModule(cameraModule: any)
-	if cameraModule.ApplyVRTransform == nil then
-		function cameraModule:ApplyVRTransform(...)
-			if self.activeCameraController and self.activeCameraController.ApplyVRTransform then
-				return self.activeCameraController:ApplyVRTransform(...)
-			end
-			return nil
-		end
-	end
+        if type(cameraModule.ApplyVRTransform) ~= "function" then
+                -- Modern Roblox no longer exposes Camera:ApplyVRTransform.
+                -- Provide a shim that directly offsets the current camera CFrame
+                -- to maintain compatibility with older loaders that may call it.
+                function cameraModule:ApplyVRTransform(transform: CFrame?)
+                        if typeof(transform) == "CFrame" then
+                                local cam = workspace.CurrentCamera
+                                cam.CFrame *= transform
+                        end
+                end
+        end
 end
 
 local function tryPatch(): boolean?
@@ -30,12 +33,17 @@ local function tryPatch(): boolean?
 		return nil
 	end
 
-	local success, cameraModule = pcall(require, playerModule:FindFirstChild("CameraModule"))
-	if success and type(cameraModule) == "table" then
-		patchCameraModule(cameraModule)
-	else
-		return nil
-	end
+        local cameraModuleScript = playerModule:FindFirstChild("CameraModule")
+        if not cameraModuleScript or not cameraModuleScript:IsA("ModuleScript") then
+                return nil
+        end
+
+        local success, cameraModule = pcall(require, cameraModuleScript)
+        if success and type(cameraModule) == "table" then
+                patchCameraModule(cameraModule)
+        else
+                return nil
+        end
 
 	local successPm, pmTable = pcall(require, playerModule)
 	if successPm and type(pmTable) == "table" and type(pmTable.CameraModule) == "table" then
