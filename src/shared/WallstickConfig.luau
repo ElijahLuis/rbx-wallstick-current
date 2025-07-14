@@ -9,9 +9,9 @@ local Config = {
 	PLANET_PULL_TIME = 5, -- seconds before pulling to nearest planet
 	RESPAWN_TIME = 7, -- seconds before teleporting to SpawnLocation
 	OUT_OF_BOUNDS_TIME = 4.5, -- seconds in freefall before redirecting to a planet
-	OUT_OF_BOUNDS_DISTANCE = 1000, -- studs from origin considered out of bounds
-	PLANET_ORBIT_MULTIPLIER = 2.2, -- multiplier for planet orbit radius based on size
-	PLANET_GRAVITY = 100, -- strength of planet gravitational pull
+	OUT_OF_BOUNDS_DISTANCE = 750, -- studs from origin considered out of bounds
+	PLANET_ORBIT_MULTIPLIER = 2, -- multiplier for planet orbit radius based on size
+	PLANET_GRAVITY = 150, -- strength of planet gravitational pull
 }
 
 function Config.update(values: { [string]: any })
