@@ -10,6 +10,25 @@ local Config = {
 	RESPAWN_TIME = 7, -- seconds before teleporting to SpawnLocation
 	OUT_OF_BOUNDS_TIME = 5, -- seconds in freefall before redirecting to a planet
 	PLANET_ORBIT_MULTIPLIER = 2.2, -- multiplier for planet orbit radius based on size
+	PLANET_GRAVITY = 100, -- strength of planet gravitational pull
 }
+
+function Config.update(values: { [string]: any })
+	for key, value in pairs(values) do
+		if Config[key] ~= nil then
+			Config[key] = value
+		end
+	end
+end
+
+function Config.getAll()
+	local copy = {} :: { [string]: any }
+	for key, value in pairs(Config) do
+		if type(value) ~= "function" then
+			copy[key] = value
+		end
+	end
+	return copy
+end
 
 return Config

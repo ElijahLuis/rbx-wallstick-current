@@ -6,7 +6,8 @@
 *.rbxl.lock
 
 sourcemap.json
-.DS_Store
+.ds_store
+stylua
 
 # Build output
 build/
@@ -14,3 +15,4 @@ out/
 
 # Rokit tools
 tools/
+
