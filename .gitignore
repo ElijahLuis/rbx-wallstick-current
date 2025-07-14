@@ -8,3 +8,11 @@
 sourcemap.json
 .ds_store
 stylua
+
+# Build output
+build/
+out/
+
+# Rokit tools
+tools/
+

@@ -8,9 +8,11 @@ export type GravityController = {
 	planetsFolder: Folder,
 	force: VectorForce,
 	orientation: AlignOrientation,
+
 	fallTime: number,
 	prevDistance: number?,
 	outPlanet: BasePart?,
+
 }
 
 local GravityController = {}
@@ -25,12 +27,14 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 
 	assert(self.root and self.humanoid, "GravityController: character missing required parts")
 
+
 	local attachment = self.root:FindFirstChild("RootAttachment")
 	if not attachment then
 		attachment = Instance.new("Attachment")
 		attachment.Name = "RootAttachment"
 		attachment.Parent = self.root
 	end
+
 
 	local force = Instance.new("VectorForce")
 	force.Attachment0 = attachment
@@ -48,6 +52,7 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 	orient.Enabled = false
 	orient.Parent = self.root
 	self.orientation = orient
+
 
 	self.fallTime = 0
 	self.prevDistance = nil
@@ -79,7 +84,10 @@ local function findNearestPlanet(planets: Folder, position: Vector3)
 	return closest
 end
 
+
 function GravityController:update(dt: number)
+
+
 	if self.humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
 		if self.force.Enabled then
 			self.force.Enabled = false
@@ -88,13 +96,16 @@ function GravityController:update(dt: number)
 		if self.orientation.Enabled then
 			self.orientation.Enabled = false
 		end
+
 		self.fallTime = 0
 		self.prevDistance = nil
 		self.outPlanet = nil
+
 		return
 	end
 
 	local planet = findNearestPlanet(self.planetsFolder, self.root.Position)
+
 	local distance = planet and (planet.Position - self.root.Position).Magnitude or nil
 
 	if self.outPlanet and planet == self.outPlanet then
