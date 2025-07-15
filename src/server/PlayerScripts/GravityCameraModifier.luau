@@ -72,10 +72,10 @@ return function(PlayerModule: any)
 		return math.atan2(v2.X * v1.Z - v2.Z * v1.X, v2.X * v1.X + v2.Z * v1.Z)
 	end
 
-        local currentRotationType = UserGameSettings.RotationType
-        UserGameSettings:GetPropertyChangedSignal("RotationType"):Connect(function()
-                currentRotationType = UserGameSettings.RotationType
-        end)
+	local currentRotationType = UserGameSettings.RotationType
+	UserGameSettings:GetPropertyChangedSignal("RotationType"):Connect(function()
+		currentRotationType = UserGameSettings.RotationType
+	end)
 	local unmodifiedSetRotationTypeOverride = cameraUtils.setRotationTypeOverride
 	function cameraUtils.setRotationTypeOverride(...)
 		unmodifiedSetRotationTypeOverride(...)
@@ -206,9 +206,11 @@ return function(PlayerModule: any)
 			self.activeCameraController.lastCameraFocus = newCameraFocus
 
 			-- Update to character local transparency as needed based on camera-to-subject distance
-			if self.activeTransparencyController then
-				self.activeTransparencyController:Update(dt)
-			end
+			-- disable automatic character fading, which caused ghosting
+			-- when rapidly zooming the camera
+			-- if self.activeTransparencyController then
+			--         self.activeTransparencyController:Update(dt)
+			-- end
 
 			if cameraInput.getInputEnabled() then
 				cameraInput.resetInputForFrameEnd()
