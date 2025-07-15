@@ -11,8 +11,6 @@ export type GravityController = {
 
 	fallTime: number,
 	prevDistance: number?,
-	outPlanet: BasePart?,
-
 }
 
 local GravityController = {}
@@ -37,7 +35,6 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 		attachment.Parent = self.root
 	end
 
-
 	local force = Instance.new("VectorForce")
 	force.Attachment0 = attachment
 	force.RelativeTo = Enum.ActuatorRelativeTo.World
@@ -55,10 +52,8 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 	orient.Parent = self.root
 	self.orientation = orient
 
-
 	self.fallTime = 0
 	self.prevDistance = nil
-	self.outPlanet = nil
 
 	return self
 end
@@ -86,10 +81,7 @@ local function findNearestPlanet(planets: Folder, position: Vector3)
 	return closest
 end
 
-
 function GravityController:update(dt: number)
-
-
 	if self.humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
 		if self.force.Enabled then
 			self.force.Enabled = false
@@ -101,7 +93,6 @@ function GravityController:update(dt: number)
 
 		self.fallTime = 0
 		self.prevDistance = nil
-		self.outPlanet = nil
 
 		return
 	end
@@ -109,17 +100,6 @@ function GravityController:update(dt: number)
 	local planet = findNearestPlanet(self.planetsFolder, self.root.Position)
 
 	local distance = planet and (planet.Position - self.root.Position).Magnitude or nil
-
-	if self.outPlanet and planet == self.outPlanet then
-		if distance and self.prevDistance and distance >= self.prevDistance then
-			local dir = (self.outPlanet.Position - self.root.Position).Unit
-			local offset = dir * (self.outPlanet.Size.Magnitude / 2 + 50)
-			self.root.AssemblyLinearVelocity = Vector3.zero
-			self.root.CFrame = CFrame.new(self.outPlanet.Position + offset)
-		end
-		self.outPlanet = nil
-		self.fallTime = 0
-	end
 
 	if distance then
 		if self.prevDistance and distance > self.prevDistance then
@@ -135,15 +115,17 @@ function GravityController:update(dt: number)
 	if self.fallTime >= Config.OUT_OF_BOUNDS_TIME or (distance and distance > Config.OUT_OF_BOUNDS_DISTANCE) then
 		if planet then
 			local dir = (planet.Position - self.root.Position).Unit
-			local speed = self.root.AssemblyLinearVelocity.Magnitude
-			self.root.AssemblyLinearVelocity = dir * speed
+			local radius = planet.Size.Magnitude / 2
+			local target = planet.Position + dir * (radius + Config.STICK_RANGE)
+			self.humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+			self.root.AssemblyLinearVelocity = Vector3.zero
+			self.root.CFrame = CFrame.new(target, planet.Position)
 			self.force.Enabled = false
 			self.force.Force = Vector3.zero
 			self.orientation.Enabled = false
-			self.outPlanet = planet
-			self.prevDistance = distance
 		end
 		self.fallTime = 0
+		self.prevDistance = nil
 		return
 	end
 
