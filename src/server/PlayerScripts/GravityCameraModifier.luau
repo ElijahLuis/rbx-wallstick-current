@@ -72,7 +72,10 @@ return function(PlayerModule: any)
 		return math.atan2(v2.X * v1.Z - v2.Z * v1.X, v2.X * v1.X + v2.Z * v1.Z)
 	end
 
-	local currentRotationType = UserGameSettings.RotationType
+        local currentRotationType = UserGameSettings.RotationType
+        UserGameSettings:GetPropertyChangedSignal("RotationType"):Connect(function()
+                currentRotationType = UserGameSettings.RotationType
+        end)
 	local unmodifiedSetRotationTypeOverride = cameraUtils.setRotationTypeOverride
 	function cameraUtils.setRotationTypeOverride(...)
 		unmodifiedSetRotationTypeOverride(...)
