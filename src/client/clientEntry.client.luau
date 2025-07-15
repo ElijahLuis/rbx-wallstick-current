@@ -96,14 +96,16 @@ local function onCharacterAdded(character: Model)
 		local closestDist = math.huge
 		local pos = hrp.Position
 
-		for _, planet in ipairs(planets) do
-			local dist = (planet.Position - pos).Magnitude
-			local radius = planet.Size.Magnitude * Config.PLANET_ORBIT_MULTIPLIER
-			if dist <= radius and dist < closestDist then
-				closest = planet
-				closestDist = dist
-			end
-		end
+               for _, planet in ipairs(planets) do
+                       local dist = (planet.Position - pos).Magnitude
+                       local radius = math.max(planet.Size.X, planet.Size.Y, planet.Size.Z)
+                               * 0.5
+                               * Config.PLANET_ORBIT_MULTIPLIER
+                       if dist <= radius and dist < closestDist then
+                               closest = planet
+                               closestDist = dist
+                       end
+               end
 
 		return closest
 	end
