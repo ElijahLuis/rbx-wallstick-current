@@ -80,9 +80,12 @@ local function onCharacterAdded(character: Model)
 
 	local function getPlanets()
 		local list = {}
-		for _, obj in ipairs(workspace:GetChildren()) do
-			if obj:IsA("BasePart") and obj.Name:sub(1, 6) == "Planet" then
-				table.insert(list, obj)
+		local folder = workspace:FindFirstChild("Planets")
+		if folder then
+			for _, obj in ipairs(folder:GetChildren()) do
+				if obj:IsA("BasePart") and obj.Name:sub(1, 6) == "Planet" then
+					table.insert(list, obj)
+				end
 			end
 		end
 		return list
@@ -137,7 +140,10 @@ local function onCharacterAdded(character: Model)
 		return best
 	end
 
-	local touchedConnection = hrp.Touched:Connect(function(hit)
+	local outOfBounds = false
+	local touchedConnections = {} :: { RBXScriptConnection }
+
+	local function onPlanetTouched(_part: BasePart, hit: BasePart)
 		if hit.Name:sub(1, 6) == "Planet" then
 			local surface = findNearestSurface(Config.STICK_RANGE, true)
 			if surface then
@@ -145,11 +151,46 @@ local function onCharacterAdded(character: Model)
 				local normal = part.CFrame:VectorToObjectSpace(surface.Normal)
 				wallstick:setAndPivot(part, normal, surface.Position)
 				fallTime = 0
+
+				if outOfBounds then
+					hrp.AssemblyLinearVelocity = Vector3.zero
+					wallstick:setEnabled(true)
+					outOfBounds = false
+				end
 			end
 		end
-	end)
+	end
+
+	local function connectTouchListeners(model: Model)
+		for _, p in ipairs(model:GetDescendants()) do
+			if p:IsA("BasePart") then
+				table.insert(
+					touchedConnections,
+					p.Touched:Connect(function(hit)
+						onPlanetTouched(p, hit)
+					end)
+				)
+			end
+		end
+	end
+
+	connectTouchListeners(wallstick.fake.character)
 
 	local simulationConnection = RunService.PreSimulation:Connect(function(dt)
+		if wallstick.fake.rootPart.Position.Y <= workspace.FallenPartsDestroyHeight then
+			outOfBounds = true
+		end
+
+		if outOfBounds then
+			local planet = findNearestPlanet()
+			if planet then
+				local direction = (planet.Position - hrp.Position).Unit
+				hrp.AssemblyLinearVelocity = direction * Config.OUT_OF_BOUNDS_SPEED
+			end
+			wallstick:setEnabled(false)
+			return
+		end
+
 		if not wallstick:isEnabled() then
 			return
 		end
@@ -179,7 +220,7 @@ local function onCharacterAdded(character: Model)
 			wallstick:setAndPivot(stickPart, stickNormal, result.Position)
 			fallTime = 0
 		else
-			if humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+			if wallstick.fake.humanoid:GetState() == Enum.HumanoidStateType.Freefall then
 				fallTime += dt
 
 				if fallTime >= Config.RESPAWN_TIME then
@@ -191,12 +232,7 @@ local function onCharacterAdded(character: Model)
 					end
 					fallTime = 0
 				elseif fallTime >= Config.OUT_OF_BOUNDS_TIME then
-					local planet = findNearestPlanet()
-					if planet then
-						local direction = (planet.Position - hrp.Position).Unit
-						local speed = hrp.AssemblyLinearVelocity.Magnitude
-						hrp.AssemblyLinearVelocity = direction * speed
-					end
+					outOfBounds = true
 				end
 			else
 				fallTime = 0
@@ -206,7 +242,9 @@ local function onCharacterAdded(character: Model)
 
 	humanoid.Died:Wait()
 	simulationConnection:Disconnect()
-	touchedConnection:Disconnect()
+	for _, con in ipairs(touchedConnections) do
+		con:Disconnect()
+	end
 	cleanupDoubleJump()
 	wallstick:Destroy()
 end

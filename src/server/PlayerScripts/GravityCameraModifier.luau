@@ -73,6 +73,9 @@ return function(PlayerModule: any)
 	end
 
 	local currentRotationType = UserGameSettings.RotationType
+	UserGameSettings:GetPropertyChangedSignal("RotationType"):Connect(function()
+		currentRotationType = UserGameSettings.RotationType
+	end)
 	local unmodifiedSetRotationTypeOverride = cameraUtils.setRotationTypeOverride
 	function cameraUtils.setRotationTypeOverride(...)
 		unmodifiedSetRotationTypeOverride(...)
@@ -89,19 +92,6 @@ return function(PlayerModule: any)
 
 	------------
 	local poppercam = require(PlayerModule.CameraModule.Poppercam) :: any
-	local zoomController = require(PlayerModule.CameraModule.ZoomController) :: any
-
-	function poppercam:Update(
-		renderDt: number,
-		desiredCameraCFrame: CFrame,
-		desiredCameraFocus: CFrame,
-		_cameraController: any
-	)
-		local rotatedFocus = desiredCameraFocus * (desiredCameraCFrame - desiredCameraCFrame.Position)
-		local extrapolation = self.focusExtrapolator:Step(renderDt, rotatedFocus)
-		local zoom = zoomController.Update(renderDt, rotatedFocus, extrapolation)
-		return rotatedFocus * CFrame.new(0, 0, zoom), desiredCameraFocus
-	end
 
 	------------
 	local baseCamera = require(PlayerModule.CameraModule.BaseCamera) :: any

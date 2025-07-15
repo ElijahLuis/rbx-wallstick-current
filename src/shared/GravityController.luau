@@ -12,21 +12,23 @@ export type GravityController = {
 	fallTime: number,
 	prevDistance: number?,
 	outPlanet: BasePart?,
-
 }
 
 local GravityController = {}
 GravityController.__index = GravityController
 
-function GravityController.new(character: Model, planetsFolder: Folder): GravityController
+function GravityController.new(character: Model, planetsFolder: Folder): GravityController?
 	local self = setmetatable({}, GravityController)
 
 	self.planetsFolder = planetsFolder
-	self.root = character:WaitForChild("HumanoidRootPart", 5)
-	self.humanoid = character:WaitForChild("Humanoid", 5)
 
-	assert(self.root and self.humanoid, "GravityController: character missing required parts")
+	self.root = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 10)
+	self.humanoid = character:FindFirstChild("Humanoid") or character:WaitForChild("Humanoid", 10)
 
+	if not (self.root and self.humanoid) then
+		warn("GravityController: character missing required parts")
+		return nil :: any
+	end
 
 	local attachment = self.root:FindFirstChild("RootAttachment")
 	if not attachment then
@@ -34,7 +36,6 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 		attachment.Name = "RootAttachment"
 		attachment.Parent = self.root
 	end
-
 
 	local force = Instance.new("VectorForce")
 	force.Attachment0 = attachment
@@ -52,7 +53,6 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 	orient.Enabled = false
 	orient.Parent = self.root
 	self.orientation = orient
-
 
 	self.fallTime = 0
 	self.prevDistance = nil
@@ -84,10 +84,7 @@ local function findNearestPlanet(planets: Folder, position: Vector3)
 	return closest
 end
 
-
 function GravityController:update(dt: number)
-
-
 	if self.humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
 		if self.force.Enabled then
 			self.force.Enabled = false
@@ -133,8 +130,7 @@ function GravityController:update(dt: number)
 	if self.fallTime >= Config.OUT_OF_BOUNDS_TIME or (distance and distance > Config.OUT_OF_BOUNDS_DISTANCE) then
 		if planet then
 			local dir = (planet.Position - self.root.Position).Unit
-			local speed = self.root.AssemblyLinearVelocity.Magnitude
-			self.root.AssemblyLinearVelocity = dir * speed
+			self.root.AssemblyLinearVelocity = dir * Config.OUT_OF_BOUNDS_SPEED
 			self.force.Enabled = false
 			self.force.Force = Vector3.zero
 			self.orientation.Enabled = false
