@@ -183,7 +183,7 @@ local function onCharacterAdded(character: Model)
 
 		if
 			wallstick.fake.rootPart.Position.Y <= workspace.FallenPartsDestroyHeight
-			or wallstick.fake.rootPart.Position.Magnitude > Config.OUT_OF_BOUNDS_DISTANCE
+			or hrp.Position.Magnitude > Config.OUT_OF_BOUNDS_DISTANCE
 		then
 			outOfBounds = true
 		end
