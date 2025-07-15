@@ -63,6 +63,10 @@ function GravityController:destroy()
 	self.orientation:Destroy()
 end
 
+local function planetRadius(planet: BasePart): number
+	return math.max(planet.Size.X, planet.Size.Y, planet.Size.Z) / 2
+end
+
 local function findNearestPlanet(planets: Folder, position: Vector3)
 	local closest
 	local closestDist = math.huge
@@ -70,7 +74,7 @@ local function findNearestPlanet(planets: Folder, position: Vector3)
 	for _, planet in ipairs(planets:GetChildren()) do
 		if planet:IsA("BasePart") and planet.Name:sub(1, 6) == "Planet" then
 			local dist = (planet.Position - position).Magnitude
-			local radius = planet.Size.Magnitude * Config.PLANET_ORBIT_MULTIPLIER
+			local radius = planetRadius(planet) * Config.PLANET_ORBIT_MULTIPLIER
 			if dist <= radius and dist < closestDist then
 				closest = planet
 				closestDist = dist
@@ -115,7 +119,7 @@ function GravityController:update(dt: number)
 	if self.fallTime >= Config.OUT_OF_BOUNDS_TIME or (distance and distance > Config.OUT_OF_BOUNDS_DISTANCE) then
 		if planet then
 			local dir = (planet.Position - self.root.Position).Unit
-			local radius = planet.Size.Magnitude / 2
+			local radius = planetRadius(planet)
 			local target = planet.Position + dir * (radius + Config.STICK_RANGE)
 			self.humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 			self.root.AssemblyLinearVelocity = Vector3.zero
