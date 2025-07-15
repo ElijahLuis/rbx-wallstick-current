@@ -10,8 +10,7 @@ export type GravityController = {
 	orientation: AlignOrientation,
 
 	fallTime: number,
-prevDistance: number?,
-
+	prevDistance: number?,
 }
 
 local GravityController = {}
@@ -36,7 +35,6 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 		attachment.Parent = self.root
 	end
 
-
 	local force = Instance.new("VectorForce")
 	force.Attachment0 = attachment
 	force.RelativeTo = Enum.ActuatorRelativeTo.World
@@ -54,9 +52,8 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 	orient.Parent = self.root
 	self.orientation = orient
 
-
-self.fallTime = 0
-self.prevDistance = nil
+	self.fallTime = 0
+	self.prevDistance = nil
 
 	return self
 end
@@ -84,10 +81,7 @@ local function findNearestPlanet(planets: Folder, position: Vector3)
 	return closest
 end
 
-
 function GravityController:update(dt: number)
-
-
 	if self.humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
 		if self.force.Enabled then
 			self.force.Enabled = false
@@ -100,13 +94,12 @@ function GravityController:update(dt: number)
 		self.fallTime = 0
 		self.prevDistance = nil
 
-return
+		return
 	end
 
 	local planet = findNearestPlanet(self.planetsFolder, self.root.Position)
 
 	local distance = planet and (planet.Position - self.root.Position).Magnitude or nil
-
 
 	if distance then
 		if self.prevDistance and distance > self.prevDistance then
@@ -122,10 +115,11 @@ return
 	if self.fallTime >= Config.OUT_OF_BOUNDS_TIME or (distance and distance > Config.OUT_OF_BOUNDS_DISTANCE) then
 		if planet then
 			local dir = (planet.Position - self.root.Position).Unit
-			local offset = dir * (planet.Size.Magnitude / 2 + 50)
+			local radius = planet.Size.Magnitude / 2
+			local target = planet.Position + dir * (radius + Config.STICK_RANGE)
 			self.humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 			self.root.AssemblyLinearVelocity = Vector3.zero
-			self.root.CFrame = CFrame.new(planet.Position + offset)
+			self.root.CFrame = CFrame.new(target, planet.Position)
 			self.force.Enabled = false
 			self.force.Force = Vector3.zero
 			self.orientation.Enabled = false
