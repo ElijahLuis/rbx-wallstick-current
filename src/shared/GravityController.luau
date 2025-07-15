@@ -10,8 +10,7 @@ export type GravityController = {
 	orientation: AlignOrientation,
 
 	fallTime: number,
-	prevDistance: number?,
-	outPlanet: BasePart?,
+prevDistance: number?,
 
 }
 
@@ -56,9 +55,8 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 	self.orientation = orient
 
 
-	self.fallTime = 0
-	self.prevDistance = nil
-	self.outPlanet = nil
+self.fallTime = 0
+self.prevDistance = nil
 
 	return self
 end
@@ -101,25 +99,14 @@ function GravityController:update(dt: number)
 
 		self.fallTime = 0
 		self.prevDistance = nil
-		self.outPlanet = nil
 
-		return
+return
 	end
 
 	local planet = findNearestPlanet(self.planetsFolder, self.root.Position)
 
 	local distance = planet and (planet.Position - self.root.Position).Magnitude or nil
 
-	if self.outPlanet and planet == self.outPlanet then
-		if distance and self.prevDistance and distance >= self.prevDistance then
-			local dir = (self.outPlanet.Position - self.root.Position).Unit
-			local offset = dir * (self.outPlanet.Size.Magnitude / 2 + 50)
-			self.root.AssemblyLinearVelocity = Vector3.zero
-			self.root.CFrame = CFrame.new(self.outPlanet.Position + offset)
-		end
-		self.outPlanet = nil
-		self.fallTime = 0
-	end
 
 	if distance then
 		if self.prevDistance and distance > self.prevDistance then
@@ -135,15 +122,16 @@ function GravityController:update(dt: number)
 	if self.fallTime >= Config.OUT_OF_BOUNDS_TIME or (distance and distance > Config.OUT_OF_BOUNDS_DISTANCE) then
 		if planet then
 			local dir = (planet.Position - self.root.Position).Unit
-			local speed = self.root.AssemblyLinearVelocity.Magnitude
-			self.root.AssemblyLinearVelocity = dir * speed
+			local offset = dir * (planet.Size.Magnitude / 2 + 50)
+			self.humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+			self.root.AssemblyLinearVelocity = Vector3.zero
+			self.root.CFrame = CFrame.new(planet.Position + offset)
 			self.force.Enabled = false
 			self.force.Force = Vector3.zero
 			self.orientation.Enabled = false
-			self.outPlanet = planet
-			self.prevDistance = distance
 		end
 		self.fallTime = 0
+		self.prevDistance = nil
 		return
 	end
 
