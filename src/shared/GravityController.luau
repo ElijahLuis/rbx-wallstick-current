@@ -18,15 +18,17 @@ export type GravityController = {
 local GravityController = {}
 GravityController.__index = GravityController
 
-function GravityController.new(character: Model, planetsFolder: Folder): GravityController
+function GravityController.new(character: Model, planetsFolder: Folder): GravityController?
 	local self = setmetatable({}, GravityController)
 
 	self.planetsFolder = planetsFolder
-	self.root = character:WaitForChild("HumanoidRootPart", 5)
-	self.humanoid = character:WaitForChild("Humanoid", 5)
+	self.root = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 10)
+	self.humanoid = character:FindFirstChild("Humanoid") or character:WaitForChild("Humanoid", 10)
 
-	assert(self.root and self.humanoid, "GravityController: character missing required parts")
-
+	if not self.root or not self.humanoid then
+		warn("GravityController: character missing required parts")
+		return nil
+	end
 
 	local attachment = self.root:FindFirstChild("RootAttachment")
 	if not attachment then
