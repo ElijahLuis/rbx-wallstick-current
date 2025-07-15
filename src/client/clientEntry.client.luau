@@ -139,58 +139,7 @@ local function onCharacterAdded(character: Model)
 		return best
 	end
 
-        local outOfBounds = false
-        local touchedConnections = {} :: { RBXScriptConnection }
-
-        local function onPlanetTouched(_part: BasePart, hit: BasePart)
-                if hit.Name:sub(1, 6) == "Planet" then
-                        local surface = findNearestSurface(Config.STICK_RANGE, true)
-                        if surface then
-                                local part = (surface.Instance :: BasePart).AssemblyRootPart
-                                local normal = part.CFrame:VectorToObjectSpace(surface.Normal)
-                                wallstick:setAndPivot(part, normal, surface.Position)
-                                fallTime = 0
-
-                                if outOfBounds then
-                                        hrp.AssemblyLinearVelocity = Vector3.zero
-                                        wallstick:setEnabled(true)
-                                        outOfBounds = false
-                                end
-                        end
-                end
-        end
-
-        local function connectTouchListeners(model: Model)
-                for _, p in ipairs(model:GetDescendants()) do
-                        if p:IsA("BasePart") then
-                                table.insert(touchedConnections, p.Touched:Connect(function(hit)
-                                        onPlanetTouched(p, hit)
-                                end))
-                        end
-                end
-        end
-
-        connectTouchListeners(wallstick.fake.character)
-
-        local simulationConnection = RunService.PreSimulation:Connect(function(dt)
-                if outOfBounds then
-                        return
-                end
-
-                if wallstick.fake.rootPart.Position.Y <= workspace.FallenPartsDestroyHeight then
-                        outOfBounds = true
-                end
-
-                if outOfBounds then
-                        local planet = findNearestPlanet()
-                        if planet then
-                                local direction = (planet.Position - hrp.Position).Unit
-                                local speed = hrp.AssemblyLinearVelocity.Magnitude
-                                hrp.AssemblyLinearVelocity = direction * speed
-                        end
-                        wallstick:setEnabled(false)
-                        return
-                end
+       local simulationConnection = RunService.PreSimulation:Connect(function(dt)
 
                 if not wallstick:isEnabled() then
                         return
@@ -224,30 +173,25 @@ local function onCharacterAdded(character: Model)
                         if wallstick.fake.humanoid:GetState() == Enum.HumanoidStateType.Freefall then
                                 fallTime += dt
 
-                                if fallTime >= Config.RESPAWN_TIME then
-                                        if spawnLocation then
-                                                hrp.AssemblyLinearVelocity = Vector3.zero
-                                                hrp.CFrame = spawnLocation.CFrame
-                                                        * CFrame.new(0, spawnLocation.Size.Y / 2 + humanoid.HipHeight, 0)
-                                                wallstick:set(workspace.Terrain, Vector3.yAxis)
-                                        end
-                                        fallTime = 0
-                                elseif fallTime >= Config.OUT_OF_BOUNDS_TIME then
-                                        outOfBounds = true
-                                end
-                        else
-                                fallTime = 0
-                        end
+                               if fallTime >= Config.RESPAWN_TIME then
+                                       if spawnLocation then
+                                               hrp.AssemblyLinearVelocity = Vector3.zero
+                                               hrp.CFrame = spawnLocation.CFrame
+                                                       * CFrame.new(0, spawnLocation.Size.Y / 2 + humanoid.HipHeight, 0)
+                                               wallstick:set(workspace.Terrain, Vector3.yAxis)
+                                       end
+                                       fallTime = 0
+                               end
+                       else
+                               fallTime = 0
+                       end
                 end
         end)
 
         humanoid.Died:Wait()
-        simulationConnection:Disconnect()
-        for _, con in ipairs(touchedConnections) do
-                con:Disconnect()
-        end
-        cleanupDoubleJump()
-        wallstick:Destroy()
+       simulationConnection:Disconnect()
+       cleanupDoubleJump()
+       wallstick:Destroy()
 end
 
 assert(not workspace.StreamingEnabled, "Wallstick does not support streaming enabled.")

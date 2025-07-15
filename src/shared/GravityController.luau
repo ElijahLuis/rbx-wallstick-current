@@ -114,26 +114,9 @@ function GravityController:update(dt: number)
 		self.prevDistance = distance
 	else
 		self.fallTime += dt
-	end
+       end
 
-	if self.fallTime >= Config.OUT_OF_BOUNDS_TIME or (distance and distance > Config.OUT_OF_BOUNDS_DISTANCE) then
-		if planet then
-			local dir = (planet.Position - self.root.Position).Unit
-			local radius = planetRadius(planet)
-			local target = planet.Position + dir * (radius + Config.STICK_RANGE)
-			self.humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-			self.root.AssemblyLinearVelocity = Vector3.zero
-			self.root.CFrame = CFrame.new(target, planet.Position)
-			self.force.Enabled = false
-			self.force.Force = Vector3.zero
-			self.orientation.Enabled = false
-		end
-		self.fallTime = 0
-		self.prevDistance = nil
-		return
-	end
-
-	if planet then
+       if planet then
 		local direction = (planet.Position - self.root.Position).Unit
 		self.force.Force = direction * self.root.AssemblyMass * Config.PLANET_GRAVITY
 		self.force.Enabled = true
