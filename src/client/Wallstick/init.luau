@@ -169,9 +169,13 @@ function WallstickClass._getCalculatedRealRootCFrame(self: Wallstick)
 	return self.part.CFrame * offset
 end
 
+-- Refreshes collision geometry around the player to match the world.
 function WallstickClass._updateCollisionGeometry(self: Wallstick)
-	local newCachedCollisionGeometry = {}
-	local newCachedTerrainGeometry = {}
+       if not self.enabled then
+               return
+       end
+       local newCachedCollisionGeometry = {}
+       local newCachedTerrainGeometry = {}
 
 	local originCF = self:_getOriginCFrame()
 	local realRootCF = self.real.rootPart.CFrame
@@ -289,7 +293,10 @@ function WallstickClass._updateCollisionGeometry(self: Wallstick)
 end
 
 function WallstickClass._trySendReplication(self: Wallstick, force: boolean)
-	local t = os.clock()
+       if not self.enabled then
+               return
+       end
+       local t = os.clock()
 	if force or t - self.replicateTick >= Replication.REPLICATE_DEBOUNCE_TIME then
 		self.replicateTick = t
 
@@ -301,18 +308,24 @@ function WallstickClass._trySendReplication(self: Wallstick, force: boolean)
 end
 
 function WallstickClass._stepRenderBeforeCamera(self: Wallstick, dt: number)
-	if self.options.camera.tilt then
-		self.cameraUpSpring:step(dt)
+       if not self.enabled or not self.options.camera.tilt then
+               return
+       end
 
-		local upVector = self.cameraUpSpring:getPosition().YVector
-		local worldUpVector = self.part.CFrame:VectorToWorldSpace(upVector)
+       self.cameraUpSpring:step(dt)
 
-		GravityCamera.setUpVector(worldUpVector)
-	end
+       local upVector = self.cameraUpSpring:getPosition().YVector
+       local worldUpVector = self.part.CFrame:VectorToWorldSpace(upVector)
+
+       GravityCamera.setUpVector(worldUpVector)
 end
 
 function WallstickClass._stepRenderCharacter(self: Wallstick, _dt: number)
-	local realRootCF = self:_getCalculatedRealRootCFrame()
+       if not self.enabled then
+               return
+       end
+
+       local realRootCF = self:_getCalculatedRealRootCFrame()
 	local rootCameraOffset = realRootCF:ToObjectSpace(workspace.CurrentCamera.CFrame)
 	local geometryCameraCF = self.fake.rootPart.CFrame * rootCameraOffset
 
