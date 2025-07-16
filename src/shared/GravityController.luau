@@ -63,12 +63,11 @@ function GravityController:destroy()
 	self.orientation:Destroy()
 end
 
--- Returns the approximate radius of a planet object
 local function planetRadius(planet: BasePart): number
 	return math.max(planet.Size.X, planet.Size.Y, planet.Size.Z) / 2
 end
 
--- Finds the nearest planet within orbit radius
+-- Finds closest planet within orbit radius
 local function findNearestPlanet(planets: Folder, position: Vector3)
 	local closest
 	local closestDist = math.huge
