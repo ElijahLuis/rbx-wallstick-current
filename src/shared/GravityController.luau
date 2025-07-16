@@ -18,6 +18,9 @@ export type GravityController = {
 	fallTime: number,
 	lastVelocity: Vector3,
 	isOutOfBounds: boolean,
+	reboundTarget: BasePart?,
+	reboundLaunched: boolean,
+	storedSpeed: number,
 }
 
 local GravityController = {}
@@ -62,6 +65,9 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 	self.fallTime = 0
 	self.lastVelocity = Vector3.zero
 	self.isOutOfBounds = false
+	self.reboundTarget = nil
+	self.reboundLaunched = false
+	self.storedSpeed = 0
 
 	return self
 end
@@ -147,6 +153,8 @@ function GravityController:update(dt: number)
 
 		self.fallTime = 0
 		self.isOutOfBounds = false
+		self.reboundTarget = nil
+		self.reboundLaunched = false
 
 		return
 	end
@@ -164,40 +172,49 @@ function GravityController:update(dt: number)
 		self.isOutOfBounds = true
 		self.root:SetAttribute("IsOutOfBounds", true)
 
-		local storedSpeed = self.lastVelocity.Magnitude
-		local nearest = self:getNearestPlanet()
-		if nearest then
-			self.root.AssemblyLinearVelocity = Vector3.zero
+		self.storedSpeed = self.lastVelocity.Magnitude
+		self.reboundTarget = self:getNearestPlanet()
+		self.reboundLaunched = false
 
-			task.delay(REBOUND_SOFT_TIME, function()
-				if not self.root then
-					return
-				end
-				local dir = (nearest.Position - self.root.Position).Unit
-				local reboundVel = dir * storedSpeed * REBOUND_FORCE_MULTIPLIER
-				self.root.AssemblyLinearVelocity = reboundVel
+		self.root.AssemblyLinearVelocity = Vector3.zero
 
-				local actual = self.root.AssemblyLinearVelocity
-				if actual.Magnitude > 0 then
-					local dot = actual.Unit:Dot(dir)
-					if dot < 0.8 then
-						self.root.AssemblyLinearVelocity = reboundVel
-					end
-				end
-			end)
-		end
+		task.delay(REBOUND_SOFT_TIME, function()
+			if not self.root or not self.reboundTarget then
+				return
+			end
+			local dir = (self.reboundTarget.Position - self.root.Position).Unit
+			local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
+			self.root.AssemblyLinearVelocity = reboundVel
+			self.reboundLaunched = true
+		end)
 
 		task.delay(REBOUND_COOLDOWN, function()
 			if self.root then
 				self.root:SetAttribute("IsOutOfBounds", false)
 			end
 			self.isOutOfBounds = false
+			self.reboundLaunched = false
+			self.reboundTarget = nil
 		end)
 
 		self.fallTime = 0
 	end
 
-	if planet then
+	if self.isOutOfBounds and self.reboundLaunched and self.reboundTarget then
+		local dir = (self.reboundTarget.Position - rootPos).Unit
+		local current = self.root.AssemblyLinearVelocity
+		if current.Magnitude == 0 or current.Unit:Dot(dir) < 0.8 then
+			local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
+			self.root.AssemblyLinearVelocity = reboundVel
+		end
+		self.force.Force = dir * self.root.AssemblyMass * Config.PLANET_GRAVITY
+		self.force.Enabled = true
+
+		local up = -dir
+		local look = self.root.CFrame.LookVector
+		self.orientation.CFrame = CFrame.lookAt(rootPos, rootPos + look, up)
+		self.orientation.Enabled = true
+	elseif planet then
 		local direction = (planet.Position - rootPos).Unit
 		self.force.Force = direction * self.root.AssemblyMass * Config.PLANET_GRAVITY
 		self.force.Enabled = true
