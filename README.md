@@ -27,6 +27,7 @@ Wallstick allows characters to walk on arbitrary surfaces using a combination of
 - `FALL_TIME_LIMIT`
 - `MAX_DISTANCE`
 - `REBOUND_FORCE_MULTIPLIER`
+- `REBOUND_SOFT_TIME`
 
 ## Demo
 A ready-made place to test the Wallstick module can be found at `demo/playground.rbxl`. 

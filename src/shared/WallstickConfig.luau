@@ -6,6 +6,7 @@ local Config = {
 	FALL_TIME_LIMIT = 4, -- seconds in freefall before rebounding
 	MAX_DISTANCE = 1800, -- studs away from planets before rebounding
 	REBOUND_FORCE_MULTIPLIER = 1.2, -- strength multiplier for rebound push
+	REBOUND_SOFT_TIME = 1, -- seconds to pause before launching back
 	REBOUND_COOLDOWN = 5, -- seconds before rebound can trigger again
 	PLANET_ORBIT_MULTIPLIER = 2, -- multiplier for planet orbit radius based on size
 	PLANET_GRAVITY = 100, -- strength of planet gravitational pull

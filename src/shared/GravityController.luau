@@ -7,6 +7,7 @@ local FALL_TIME_LIMIT = Config.FALL_TIME_LIMIT
 local MAX_DISTANCE = Config.MAX_DISTANCE
 local REBOUND_FORCE_MULTIPLIER = Config.REBOUND_FORCE_MULTIPLIER
 local REBOUND_COOLDOWN = Config.REBOUND_COOLDOWN
+local REBOUND_SOFT_TIME = Config.REBOUND_SOFT_TIME
 
 export type GravityController = {
 	root: BasePart,
@@ -160,20 +161,39 @@ function GravityController:update(dt: number)
 	end
 
 	if self.fallTime >= FALL_TIME_LIMIT and not self.isOutOfBounds then
+		self.isOutOfBounds = true
+		self.root:SetAttribute("IsOutOfBounds", true)
+
+		local storedSpeed = self.lastVelocity.Magnitude
 		local nearest = self:getNearestPlanet()
 		if nearest then
-			local dir = (nearest.Position - rootPos).Unit
-			local reboundVel = dir * self.lastVelocity.Magnitude * REBOUND_FORCE_MULTIPLIER
-			self.root.AssemblyLinearVelocity = reboundVel
-			self.isOutOfBounds = true
-			self.root:SetAttribute("IsOutOfBounds", true)
-			task.delay(REBOUND_COOLDOWN, function()
-				if self.root then
-					self.root:SetAttribute("IsOutOfBounds", false)
+			self.root.AssemblyLinearVelocity = Vector3.zero
+
+			task.delay(REBOUND_SOFT_TIME, function()
+				if not self.root then
+					return
 				end
-				self.isOutOfBounds = false
+				local dir = (nearest.Position - self.root.Position).Unit
+				local reboundVel = dir * storedSpeed * REBOUND_FORCE_MULTIPLIER
+				self.root.AssemblyLinearVelocity = reboundVel
+
+				local actual = self.root.AssemblyLinearVelocity
+				if actual.Magnitude > 0 then
+					local dot = actual.Unit:Dot(dir)
+					if dot < 0.8 then
+						self.root.AssemblyLinearVelocity = reboundVel
+					end
+				end
 			end)
 		end
+
+		task.delay(REBOUND_COOLDOWN, function()
+			if self.root then
+				self.root:SetAttribute("IsOutOfBounds", false)
+			end
+			self.isOutOfBounds = false
+		end)
+
 		self.fallTime = 0
 	end
 
