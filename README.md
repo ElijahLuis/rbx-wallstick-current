@@ -22,9 +22,11 @@ Wallstick allows characters to walk on arbitrary surfaces using a combination of
 
 ### Configuration
 - Tweak movement parameters via `ReplicatedStorage.WallstickConfig`:
-  - `STICK_RANGE`
-  - `DETECTION_SHAPE`
-  - `MAX_FALL_DISTANCE`
+- `STICK_RANGE`
+- `DETECTION_SHAPE`
+- `FALL_TIME_LIMIT`
+- `MAX_DISTANCE`
+- `REBOUND_FORCE_MULTIPLIER`
 
 ## Demo
 A ready-made place to test the Wallstick module can be found at `demo/playground.rbxl`. 
@@ -49,7 +51,7 @@ When both "rojo serve" is running and Rojo plugin is connected, all changes made
 
 ## Configuration
 Key movement parameters can be tweaked in `ReplicatedStorage.WallstickConfig`.
-Adjust values like `STICK_RANGE`, `DETECTION_SHAPE`, or `MAX_FALL_DISTANCE` to fit your game before building with Rojo.
+Adjust values like `STICK_RANGE`, `DETECTION_SHAPE`, or the rebound options to fit your game before building with Rojo.
 
 ## New Features (added by Nejinumanuma)
 * **Avatar support** - both R6 and R15 characters are handled gracefully.

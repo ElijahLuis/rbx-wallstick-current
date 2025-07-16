@@ -3,12 +3,10 @@
 local Config = {
 	STICK_RANGE = 6, -- studs to check downward from root
 	DETECTION_SHAPE = "Box", -- Detection shape: "Box" or "Ray"
-	MAX_FALL_DISTANCE = 50, -- studs before resetting to terrain
-	FALL_PULL_TIME = 3, -- seconds before auto reattaching in freefall
-	PULL_SEARCH_RADIUS = 50, -- radius to search for a surface when pulling
-	PLANET_PULL_TIME = 3.5, -- seconds before pulling to nearest planet
-	RESPAWN_TIME = 8, -- seconds before teleporting to SpawnLocation
-
+	FALL_TIME_LIMIT = 4, -- seconds in freefall before rebounding
+	MAX_DISTANCE = 1800, -- studs away from planets before rebounding
+	REBOUND_FORCE_MULTIPLIER = 1.2, -- strength multiplier for rebound push
+	REBOUND_COOLDOWN = 5, -- seconds before rebound can trigger again
 	PLANET_ORBIT_MULTIPLIER = 2, -- multiplier for planet orbit radius based on size
 	PLANET_GRAVITY = 100, -- strength of planet gravitational pull
 }
