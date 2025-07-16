@@ -1,6 +1,6 @@
 --!strict
 
--- Handles planetary gravity for characters on the server.
+-- Handles planetary gravity for characters on server
 local Config = require(script.Parent:WaitForChild("WallstickConfig"))
 
 export type GravityController = {
@@ -9,7 +9,6 @@ export type GravityController = {
 	planetsFolder: Folder,
 	force: VectorForce,
 	orientation: AlignOrientation,
-
 	fallTime: number,
 	prevDistance: number?,
 }

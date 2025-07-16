@@ -6,12 +6,11 @@ local Config = {
 	MAX_FALL_DISTANCE = 50, -- studs before resetting to terrain
 	FALL_PULL_TIME = 3, -- seconds before auto reattaching in freefall
 	PULL_SEARCH_RADIUS = 50, -- radius to search for a surface when pulling
-	PLANET_PULL_TIME = 5, -- seconds before pulling to nearest planet
-	RESPAWN_TIME = 7, -- seconds before teleporting to SpawnLocation
+	PLANET_PULL_TIME = 3.5, -- seconds before pulling to nearest planet
+	RESPAWN_TIME = 8, -- seconds before teleporting to SpawnLocation
 
-	PLANET_ORBIT_MULTIPLIER = 2.2, -- multiplier for planet orbit radius based on size
+	PLANET_ORBIT_MULTIPLIER = 2, -- multiplier for planet orbit radius based on size
 	PLANET_GRAVITY = 100, -- strength of planet gravitational pull
-
 }
 
 function Config.update(values: { [string]: any })
