@@ -184,6 +184,18 @@ function GravityController:update(dt: number)
 			if self.humanoid then
 				self.humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 			end
+
+			local platform = Instance.new("Part")
+			platform.Size = Vector3.new(10, 1, 10)
+			platform.CFrame = self.root.CFrame * CFrame.new(0, -3, 0)
+			platform.Anchored = true
+			platform.Transparency = 1
+			platform.CanCollide = true
+			platform.Parent = workspace
+			task.delay(0.1, function()
+				platform:Destroy()
+			end)
+
 			self.reboundLaunched = true
 		end)
 
