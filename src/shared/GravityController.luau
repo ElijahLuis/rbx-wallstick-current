@@ -13,7 +13,6 @@ export type GravityController = {
 	root: BasePart,
 	humanoid: Humanoid,
 	planetsFolder: Folder,
-	player: Player?,
 	force: VectorForce,
 	orientation: AlignOrientation,
 	fallTime: number,
@@ -27,19 +26,12 @@ export type GravityController = {
 local GravityController = {}
 GravityController.__index = GravityController
 
-function GravityController.new(character: Model, planetsFolder: Folder, player: Player?): GravityController?
+function GravityController.new(character: Model, planetsFolder: Folder): GravityController?
 	local self = setmetatable({}, GravityController)
 
 	self.planetsFolder = planetsFolder
-	self.player = player
 	self.root = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 10)
 	self.humanoid = character:FindFirstChild("Humanoid") or character:WaitForChild("Humanoid", 10)
-
-	if player and self.root then
-		pcall(function()
-			self.root:SetNetworkOwner(player)
-		end)
-	end
 
 	if not self.root or not self.humanoid then
 		warn("GravityController: character missing required parts")
@@ -180,10 +172,6 @@ function GravityController:update(dt: number)
 		self.reboundTarget = self:getNearestPlanet()
 		self.reboundLaunched = false
 
-		-- server takes control during rebound to apply velocity reliably
-		pcall(function()
-			self.root:SetNetworkOwner(nil)
-		end)
 		self.root.AssemblyLinearVelocity = Vector3.zero
 
 		task.delay(REBOUND_SOFT_TIME, function()
@@ -197,22 +185,11 @@ function GravityController:update(dt: number)
 				self.humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 			end
 			self.reboundLaunched = true
-			-- give control back to the player after applying the push
-			if self.player then
-				pcall(function()
-					self.root:SetNetworkOwner(self.player)
-				end)
-			end
 		end)
 
 		task.delay(REBOUND_COOLDOWN, function()
 			if self.root then
 				self.root:SetAttribute("IsOutOfBounds", false)
-				if self.player then
-					pcall(function()
-						self.root:SetNetworkOwner(self.player)
-					end)
-				end
 			end
 			self.isOutOfBounds = false
 			self.reboundLaunched = false

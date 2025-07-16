@@ -14,7 +14,7 @@ local controllers: { [Player]: GravityController.GravityController } = {}
 local GravityManager = {}
 
 local function setupCharacter(player: Player, character: Model)
-       controllers[player] = GravityController.new(character, Planets, player)
+	controllers[player] = GravityController.new(character, Planets)
 	local humanoid = character:WaitForChild("Humanoid")
 	humanoid.Died:Connect(function()
 		local ctrl = controllers[player]
@@ -48,11 +48,9 @@ for _, player in ipairs(Players:GetPlayers()) do
 	onPlayerAdded(player)
 end
 
-
 RunService.Heartbeat:Connect(function(dt)
 	for _, controller in pairs(controllers) do
 		controller:update(dt)
-
 	end
 end)
 
