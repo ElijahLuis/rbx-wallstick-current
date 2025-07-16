@@ -14,7 +14,7 @@ local controllers: { [Player]: GravityController.GravityController } = {}
 local GravityManager = {}
 
 local function setupCharacter(player: Player, character: Model)
-	controllers[player] = GravityController.new(character, Planets)
+       controllers[player] = GravityController.new(character, Planets, player)
 	local humanoid = character:WaitForChild("Humanoid")
 	humanoid.Died:Connect(function()
 		local ctrl = controllers[player]
