@@ -8,7 +8,6 @@ local MAX_DISTANCE = Config.MAX_DISTANCE
 local REBOUND_FORCE_MULTIPLIER = Config.REBOUND_FORCE_MULTIPLIER
 local REBOUND_COOLDOWN = Config.REBOUND_COOLDOWN
 local REBOUND_SOFT_TIME = Config.REBOUND_SOFT_TIME
-local TweenService = game:GetService("TweenService")
 
 export type GravityController = {
 	root: BasePart,
@@ -132,16 +131,6 @@ function GravityController:getNearestPlanet()
 	return planet
 end
 
-function GravityController:getLastVelocity()
-	return self.lastVelocity
-end
-
-local function tweenVelocity(part: BasePart, velocity: Vector3)
-	local info = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tween = TweenService:Create(part, info, { AssemblyLinearVelocity = velocity })
-	tween:Play()
-end
-
 function GravityController:update(dt: number)
 	if not self.root or not self.humanoid then
 		return
@@ -191,7 +180,7 @@ function GravityController:update(dt: number)
 			end
 			local dir = (self.reboundTarget.Position - self.root.Position).Unit
 			local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
-			tweenVelocity(self.root, reboundVel)
+			self.root.AssemblyLinearVelocity = reboundVel
 			if self.humanoid then
 				self.humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 			end
@@ -213,9 +202,9 @@ function GravityController:update(dt: number)
 	if self.isOutOfBounds and self.reboundLaunched and self.reboundTarget then
 		local dir = (self.reboundTarget.Position - rootPos).Unit
 		local current = self.root.AssemblyLinearVelocity
-		if current.Magnitude == 0 or current.Unit:Dot(dir) < 0.8 then
+		if current.Magnitude == 0 or current.Unit:Dot(dir) < 0.9 then
 			local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
-			tweenVelocity(self.root, reboundVel)
+			self.root.AssemblyLinearVelocity = reboundVel
 		end
 		self.force.Force = dir * self.root.AssemblyMass * Config.PLANET_GRAVITY
 		self.force.Enabled = true
