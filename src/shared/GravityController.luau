@@ -1,5 +1,6 @@
 --!strict
 
+-- Handles planetary gravity for characters on the server.
 local Config = require(script.Parent:WaitForChild("WallstickConfig"))
 
 export type GravityController = {
@@ -17,16 +18,16 @@ local GravityController = {}
 GravityController.__index = GravityController
 
 function GravityController.new(character: Model, planetsFolder: Folder): GravityController?
-	local self = setmetatable({}, GravityController)
+       local self = setmetatable({}, GravityController)
 
-	self.planetsFolder = planetsFolder
-	self.root = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 10)
-	self.humanoid = character:FindFirstChild("Humanoid") or character:WaitForChild("Humanoid", 10)
+       self.planetsFolder = planetsFolder
+       self.root = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 10)
+       self.humanoid = character:FindFirstChild("Humanoid") or character:WaitForChild("Humanoid", 10)
 
-	if not self.root or not self.humanoid then
-		warn("GravityController: character missing required parts")
-		return nil
-	end
+       if not self.root or not self.humanoid then
+               warn("GravityController: character missing required parts")
+               return nil
+       end
 
 	local attachment = self.root:FindFirstChild("RootAttachment")
 	if not attachment then
@@ -63,10 +64,12 @@ function GravityController:destroy()
 	self.orientation:Destroy()
 end
 
+-- Returns the approximate radius of a planet object
 local function planetRadius(planet: BasePart): number
 	return math.max(planet.Size.X, planet.Size.Y, planet.Size.Z) / 2
 end
 
+-- Finds the nearest planet within orbit radius
 local function findNearestPlanet(planets: Folder, position: Vector3)
 	local closest
 	local closestDist = math.huge
@@ -86,54 +89,59 @@ local function findNearestPlanet(planets: Folder, position: Vector3)
 end
 
 function GravityController:update(dt: number)
-	if self.humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
-		if self.force.Enabled then
-			self.force.Enabled = false
-			self.force.Force = Vector3.zero
-		end
-		if self.orientation.Enabled then
-			self.orientation.Enabled = false
-		end
+       if not self.root or not self.humanoid then
+               return
+       end
 
-		self.fallTime = 0
-		self.prevDistance = nil
+       if self.humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
+               if self.force.Enabled then
+                       self.force.Enabled = false
+                       self.force.Force = Vector3.zero
+               end
+               if self.orientation.Enabled then
+                       self.orientation.Enabled = false
+               end
 
-		return
-	end
+               self.fallTime = 0
+               self.prevDistance = nil
 
-	local planet = findNearestPlanet(self.planetsFolder, self.root.Position)
+               return
+       end
 
-	local distance = planet and (planet.Position - self.root.Position).Magnitude or nil
+       local rootPos = self.root.Position
+       local planet = findNearestPlanet(self.planetsFolder, rootPos)
 
-	if distance then
-		if self.prevDistance and distance > self.prevDistance then
-			self.fallTime += dt
-		else
-			self.fallTime = 0
-		end
-		self.prevDistance = distance
-	else
-		self.fallTime += dt
+       local distance = planet and (planet.Position - rootPos).Magnitude or nil
+
+       if distance then
+               if self.prevDistance and distance > self.prevDistance then
+                       self.fallTime += dt
+               else
+                       self.fallTime = 0
+               end
+               self.prevDistance = distance
+       else
+               self.fallTime += dt
        end
 
        if planet then
-		local direction = (planet.Position - self.root.Position).Unit
-		self.force.Force = direction * self.root.AssemblyMass * Config.PLANET_GRAVITY
-		self.force.Enabled = true
+               local direction = (planet.Position - rootPos).Unit
+               self.force.Force = direction * self.root.AssemblyMass * Config.PLANET_GRAVITY
+               self.force.Enabled = true
 
-		local up = -direction
-		local look = self.root.CFrame.LookVector
-		self.orientation.CFrame = CFrame.lookAt(self.root.Position, self.root.Position + look, up)
-		self.orientation.Enabled = true
-	else
-		if self.force.Enabled then
-			self.force.Enabled = false
-			self.force.Force = Vector3.zero
-		end
-		if self.orientation.Enabled then
-			self.orientation.Enabled = false
-		end
-	end
+               local up = -direction
+               local look = self.root.CFrame.LookVector
+               self.orientation.CFrame = CFrame.lookAt(rootPos, rootPos + look, up)
+               self.orientation.Enabled = true
+       else
+               if self.force.Enabled then
+                       self.force.Enabled = false
+                       self.force.Force = Vector3.zero
+               end
+               if self.orientation.Enabled then
+                       self.orientation.Enabled = false
+               end
+       end
 end
 
 return GravityController
