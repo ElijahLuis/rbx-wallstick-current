@@ -1,5 +1,5 @@
 --!strict
-return function(PlayerModule: any)
+local function patchCameraModule(cameraModule: any)
 	local transitionRate: number = 1
 
 	local upCFrame: CFrame = CFrame.identity
@@ -12,10 +12,7 @@ return function(PlayerModule: any)
 	local prevSpinCFrame: CFrame = spinPart.CFrame
 
 	local UserGameSettings = UserSettings():GetService("UserGameSettings")
-
 	local RotationUtils = require(game.ReplicatedStorage.Wallstick.RotationUtils)
-
-	--
 
 	local function swingTwist(inputCF: CFrame, relativeUnitAxis: Vector3)
 		local axis, theta = inputCF:ToAxisAngle()
@@ -31,188 +28,55 @@ return function(PlayerModule: any)
 
 	local function calculateUpStep(_dt: number)
 		local axis = workspace.CurrentCamera.CFrame.RightVector
-
 		local sphericalArc = RotationUtils.fromToRotation(upVector, targetUpVector, axis)
 		local transitionCF = CFrame.new():Lerp(sphericalArc, transitionRate)
-
 		upVector = transitionCF * upVector
 		upCFrame = transitionCF * upCFrame
 	end
 
 	local function calculateSpinStep(_dt: number, inVehicle: boolean)
 		local theta = 0
-
 		if inVehicle then
 			theta = 0
 		elseif spinPart == prevSpinPart then
 			local rotation = spinPart.CFrame.Rotation
 			local prevRotation = prevSpinCFrame.Rotation
-
 			local delta = prevRotation:ToObjectSpace(rotation)
 			local spinAxis = delta:VectorToObjectSpace(prevRotation:VectorToObjectSpace(upVector))
-
-			local _swing, twist = swingTwist(delta, spinAxis)
-			local deltaAxis, _deltaTheta = delta:ToAxisAngle()
-			local _twistAxis, twistTheta = twist:ToAxisAngle()
-
+			local _, twist = swingTwist(delta, spinAxis)
+			local deltaAxis, _ = delta:ToAxisAngle()
+			local _, twistTheta = twist:ToAxisAngle()
 			theta = math.sign(deltaAxis:Dot(spinAxis)) * twistTheta
 		end
-
 		twistCFrame = CFrame.fromEulerAnglesYXZ(0, theta, 0)
-
 		prevSpinPart = spinPart
 		prevSpinCFrame = spinPart.CFrame
 	end
 
-	local cameraUtils = require(PlayerModule.CameraModule.CameraUtils) :: any
+	-- Modify camera controller behavior
+	local cameraUtils = require(cameraModule.CameraModule.CameraUtils)
 	function cameraUtils.GetAngleBetweenXZVectors(v1: Vector3, v2: Vector3): number
 		v1 = upCFrame:VectorToObjectSpace(v1)
 		v2 = upCFrame:VectorToObjectSpace(v2)
-
 		return math.atan2(v2.X * v1.Z - v2.Z * v1.X, v2.X * v1.X + v2.Z * v1.Z)
 	end
 
-        local currentRotationType = UserGameSettings.RotationType
-        UserGameSettings:GetPropertyChangedSignal("RotationType"):Connect(function()
-                currentRotationType = UserGameSettings.RotationType
-        end)
-	local unmodifiedSetRotationTypeOverride = cameraUtils.setRotationTypeOverride
-	function cameraUtils.setRotationTypeOverride(...)
-		unmodifiedSetRotationTypeOverride(...)
-		currentRotationType = UserGameSettings.RotationType
-		UserGameSettings.RotationType = Enum.RotationType.MovementRelative
-	end
+	-- Override cameraModule methods
+	function cameraModule:GetUpVector() return upVector end
+	function cameraModule:GetTargetUpVector() return targetUpVector end
+	function cameraModule:SetTargetUpVector(target: Vector3) targetUpVector = target end
+	function cameraModule:GetSpinPart() return spinPart end
+	function cameraModule:SetSpinPart(part: BasePart) spinPart = part end
+	function cameraModule:SetTransitionRate(rate: number) transitionRate = rate end
+	function cameraModule:GetTransitionRate(): number return transitionRate end
 
-	local unmodifiedRestoreRotationType = cameraUtils.restoreRotationType
-	function cameraUtils.restoreRotationType(...)
-		unmodifiedRestoreRotationType(...)
-		currentRotationType = UserGameSettings.RotationType
-		UserGameSettings.RotationType = Enum.RotationType.MovementRelative
-	end
-
-	------------
-	local poppercam = require(PlayerModule.CameraModule.Poppercam) :: any
-	local zoomController = require(PlayerModule.CameraModule.ZoomController) :: any
-
-	function poppercam:Update(
-		renderDt: number,
-		desiredCameraCFrame: CFrame,
-		desiredCameraFocus: CFrame,
-		_cameraController: any
-	)
-		local rotatedFocus = desiredCameraFocus * (desiredCameraCFrame - desiredCameraCFrame.Position)
-		local extrapolation = self.focusExtrapolator:Step(renderDt, rotatedFocus)
-		local zoom = zoomController.Update(renderDt, rotatedFocus, extrapolation)
-		return rotatedFocus * CFrame.new(0, 0, zoom), desiredCameraFocus
-	end
-
-	------------
-	local baseCamera = require(PlayerModule.CameraModule.BaseCamera) :: any
-
-	local max_y = math.rad(80)
-	local min_y = math.rad(-80)
-
-	function baseCamera:CalculateNewLookCFrameFromArg(suppliedLookVector: Vector3?, rotateInput: Vector2): CFrame
-		local currLookVector: Vector3 = suppliedLookVector or self:GetCameraLookVector()
-		currLookVector = upCFrame:VectorToObjectSpace(currLookVector)
-
-		local currPitchAngle = math.asin(currLookVector.Y)
-		local yTheta = math.clamp(rotateInput.Y, -max_y + currPitchAngle, -min_y + currPitchAngle)
-		local constrainedRotateInput = Vector2.new(rotateInput.X, yTheta)
-		local startCFrame = CFrame.new(Vector3.zero, currLookVector)
-		local newLookCFrame = CFrame.Angles(0, -constrainedRotateInput.X, 0)
-			* startCFrame
-			* CFrame.Angles(-constrainedRotateInput.Y, 0, 0)
-
-		return newLookCFrame
-	end
-
-	------------
-	local vehicleCameraCore = require(PlayerModule.CameraModule.VehicleCamera.VehicleCameraCore) :: any
-	local setTransform = vehicleCameraCore.setTransform
-
-	function vehicleCameraCore:setTransform(transform: CFrame)
-		transform = upCFrame:ToObjectSpace(transform.Rotation) + transform.Position
-		return setTransform(self, transform)
-	end
-
-	------------
-	local cameraObject = require(PlayerModule.CameraModule) :: any
-	local cameraInput = require(PlayerModule.CameraModule.CameraInput) :: any
-
-	function cameraObject:GetUpVector(): Vector3
-		return upVector
-	end
-
-	function cameraObject:GetTargetUpVector(): Vector3
-		return targetUpVector
-	end
-
-	function cameraObject:SetTargetUpVector(target: Vector3)
-		targetUpVector = target
-	end
-
-	function cameraObject:GetSpinPart(): BasePart
-		return spinPart
-	end
-
-	function cameraObject:SetSpinPart(part: BasePart)
-		spinPart = part
-	end
-
-	function cameraObject:SetTransitionRate(rate: number)
-		transitionRate = rate
-	end
-
-	function cameraObject:GetTransitionRate(): number
-		return transitionRate
-	end
-
-	function cameraObject:GetRotationType(): Enum.RotationType
-		return currentRotationType
-	end
-
-	function cameraObject:Update(dt: number)
-		if self.activeCameraController then
-			self.activeCameraController:UpdateMouseBehavior()
-
-			local newCameraCFrame, newCameraFocus = self.activeCameraController:Update(dt)
-			local lockOffset = self.activeCameraController:GetIsMouseLocked()
-					and self.activeCameraController:GetMouseLockOffset()
-				or Vector3.new(0, 0, 0)
-
-			calculateUpStep(dt)
-			calculateSpinStep(dt, self:ShouldUseVehicleCamera())
-
-			local fixedCameraFocus = CFrame.new(newCameraFocus.Position) -- fixes an issue with vehicle cameras
-			local camRotation = upCFrame * twistCFrame * fixedCameraFocus:ToObjectSpace(newCameraCFrame)
-			local adjustedLockOffset = -newCameraCFrame:VectorToWorldSpace(lockOffset)
-				+ camRotation:VectorToWorldSpace(lockOffset)
-
-			newCameraFocus = fixedCameraFocus + adjustedLockOffset
-			newCameraCFrame = newCameraFocus * camRotation
-
-			if self.activeOcclusionModule then
-				newCameraCFrame, newCameraFocus = self.activeOcclusionModule:Update(dt, newCameraCFrame, newCameraFocus)
-			end
-
-			-- Here is where the new CFrame and Focus are set for this render frame
-			local currentCamera = game.Workspace.CurrentCamera :: Camera
-			currentCamera.CFrame = newCameraCFrame
-			currentCamera.Focus = newCameraFocus
-
-			-- fixes issue with follow camera
-			self.activeCameraController.lastCameraTransform = newCameraCFrame
-			self.activeCameraController.lastCameraFocus = newCameraFocus
-
-			-- Update to character local transparency as needed based on camera-to-subject distance
-			if self.activeTransparencyController then
-				self.activeTransparencyController:Update(dt)
-			end
-
-			if cameraInput.getInputEnabled() then
-				cameraInput.resetInputForFrameEnd()
-			end
-		end
+	-- Patch main camera update to include our steps
+	local originalUpdate = cameraModule.Update
+	function cameraModule:Update(dt: number)
+		calculateUpStep(dt)
+		calculateSpinStep(dt, self:ShouldUseVehicleCamera())
+		return originalUpdate(self, dt)
 	end
 end
+
+return patchCameraModule
