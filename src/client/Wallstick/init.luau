@@ -171,11 +171,11 @@ end
 
 -- Refreshes collision geometry around the player to match the world.
 function WallstickClass._updateCollisionGeometry(self: Wallstick)
-       if not self.enabled then
-               return
-       end
-       local newCachedCollisionGeometry = {}
-       local newCachedTerrainGeometry = {}
+	if not self.enabled then
+		return
+	end
+	local newCachedCollisionGeometry = {}
+	local newCachedTerrainGeometry = {}
 
 	local originCF = self:_getOriginCFrame()
 	local realRootCF = self.real.rootPart.CFrame
@@ -293,10 +293,10 @@ function WallstickClass._updateCollisionGeometry(self: Wallstick)
 end
 
 function WallstickClass._trySendReplication(self: Wallstick, force: boolean)
-       if not self.enabled then
-               return
-       end
-       local t = os.clock()
+	if not self.enabled then
+		return
+	end
+	local t = os.clock()
 	if force or t - self.replicateTick >= Replication.REPLICATE_DEBOUNCE_TIME then
 		self.replicateTick = t
 
@@ -308,24 +308,24 @@ function WallstickClass._trySendReplication(self: Wallstick, force: boolean)
 end
 
 function WallstickClass._stepRenderBeforeCamera(self: Wallstick, dt: number)
-       if not self.enabled or not self.options.camera.tilt then
-               return
-       end
+	if not self.enabled or not self.options.camera.tilt then
+		return
+	end
 
-       self.cameraUpSpring:step(dt)
+	self.cameraUpSpring:step(dt)
 
-       local upVector = self.cameraUpSpring:getPosition().YVector
-       local worldUpVector = self.part.CFrame:VectorToWorldSpace(upVector)
+	local upVector = self.cameraUpSpring:getPosition().YVector
+	local worldUpVector = self.part.CFrame:VectorToWorldSpace(upVector)
 
-       GravityCamera.setUpVector(worldUpVector)
+	GravityCamera.setUpVector(worldUpVector)
 end
 
 function WallstickClass._stepRenderCharacter(self: Wallstick, _dt: number)
-       if not self.enabled then
-               return
-       end
+	if not self.enabled then
+		return
+	end
 
-       local realRootCF = self:_getCalculatedRealRootCFrame()
+	local realRootCF = self:_getCalculatedRealRootCFrame()
 	local rootCameraOffset = realRootCF:ToObjectSpace(workspace.CurrentCamera.CFrame)
 	local geometryCameraCF = self.fake.rootPart.CFrame * rootCameraOffset
 
@@ -343,9 +343,9 @@ function WallstickClass._stepRenderCharacter(self: Wallstick, _dt: number)
 end
 
 function WallstickClass._stepPhysics(self: Wallstick, _dt: number)
-        if self.fake.rootPart.Position.Y <= workspace.FallenPartsDestroyHeight then
-                return
-        end
+	if self.fake.rootPart.Position.Y <= workspace.FallenPartsDestroyHeight then
+		return
+	end
 
 	if not self.enabled then
 		return
@@ -452,19 +452,6 @@ function WallstickClass.setAndPivot(self: Wallstick, part: BasePart, normal: Vec
 	local worldNormal = part.CFrame:VectorToWorldSpace(normal)
 	local realRootCF = self:_getCalculatedRealRootCFrame()
 	local heightAdjust = (realRootCF.Position - position):Dot(worldNormal)
-
-	local floorRootCF = realRootCF * CFrame.new(0, -heightAdjust, 0)
-	local newRotation = RotationUtils.fromToRotation(floorRootCF.YVector, worldNormal, floorRootCF.XVector)
-		* floorRootCF.Rotation
-	local teleportCF = CFrame.new(position) * newRotation * CFrame.new(0, heightAdjust, 0)
-
-	return self:set(part, normal, teleportCF)
-end
-
-function WallstickClass.setAndTeleport(self: Wallstick, part: BasePart, normal: Vector3, position: Vector3)
-	local worldNormal = part.CFrame:VectorToWorldSpace(normal)
-	local realRootCF = self:_getCalculatedRealRootCFrame()
-	local heightAdjust = self.real.rootPart.Size.Y / 2 + self.real.humanoid.HipHeight
 
 	local floorRootCF = realRootCF * CFrame.new(0, -heightAdjust, 0)
 	local newRotation = RotationUtils.fromToRotation(floorRootCF.YVector, worldNormal, floorRootCF.XVector)

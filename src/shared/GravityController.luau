@@ -3,6 +3,17 @@
 -- Handles planetary gravity for characters on server
 local Config = require(script.Parent:WaitForChild("WallstickConfig"))
 
+local FALL_TIME_LIMIT = Config.FALL_TIME_LIMIT
+local MAX_DISTANCE = Config.MAX_DISTANCE
+local REBOUND_FORCE_MULTIPLIER = Config.REBOUND_FORCE_MULTIPLIER
+local REBOUND_COOLDOWN = Config.REBOUND_COOLDOWN
+local REBOUND_SOFT_TIME = Config.REBOUND_SOFT_TIME
+local GROUND_CHECK_DISTANCE = 4
+
+local function debugPrint(...)
+       print("[GravityController]", ...)
+end
+
 export type GravityController = {
 	root: BasePart,
 	humanoid: Humanoid,
@@ -10,23 +21,28 @@ export type GravityController = {
 	force: VectorForce,
 	orientation: AlignOrientation,
 	fallTime: number,
-	prevDistance: number?,
+	lastVelocity: Vector3,
+	isOutOfBounds: boolean,
+	reboundTarget: BasePart?,
+	reboundLaunched: boolean,
+	storedSpeed: number,
+	rayParams: RaycastParams,
 }
 
 local GravityController = {}
 GravityController.__index = GravityController
 
 function GravityController.new(character: Model, planetsFolder: Folder): GravityController?
-       local self = setmetatable({}, GravityController)
+	local self = setmetatable({}, GravityController)
 
-       self.planetsFolder = planetsFolder
-       self.root = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 10)
-       self.humanoid = character:FindFirstChild("Humanoid") or character:WaitForChild("Humanoid", 10)
+	self.planetsFolder = planetsFolder
+	self.root = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart", 10)
+	self.humanoid = character:FindFirstChild("Humanoid") or character:WaitForChild("Humanoid", 10)
 
-       if not self.root or not self.humanoid then
-               warn("GravityController: character missing required parts")
-               return nil
-       end
+	if not self.root or not self.humanoid then
+		warn("GravityController: character missing required parts")
+		return nil
+	end
 
 	local attachment = self.root:FindFirstChild("RootAttachment")
 	if not attachment then
@@ -52,8 +68,18 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 	orient.Parent = self.root
 	self.orientation = orient
 
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { character }
+	params.IgnoreWater = true
+	self.rayParams = params
+
 	self.fallTime = 0
-	self.prevDistance = nil
+	self.lastVelocity = Vector3.zero
+	self.isOutOfBounds = false
+	self.reboundTarget = nil
+	self.reboundLaunched = false
+	self.storedSpeed = 0
 
 	return self
 end
@@ -86,60 +112,156 @@ local function findNearestPlanet(planets: Folder, position: Vector3)
 	return closest
 end
 
+local function findClosestPlanet(planets: Folder, position: Vector3)
+	local closest
+	local closestDist = math.huge
+
+	for _, planet in ipairs(planets:GetChildren()) do
+		if planet:IsA("BasePart") and planet.Name:sub(1, 6) == "Planet" then
+			local dist = (planet.Position - position).Magnitude
+			if dist < closestDist then
+				closest = planet
+				closestDist = dist
+			end
+		end
+	end
+
+	return closest, closestDist
+end
+
+function GravityController:isGrounded()
+	local result = workspace:Raycast(self.root.Position, Vector3.new(0, -GROUND_CHECK_DISTANCE, 0), self.rayParams)
+	return result ~= nil
+end
+
+function GravityController:isFalling()
+	return self.root.AssemblyLinearVelocity.Y < -0.1 and not self:isGrounded()
+end
+
+function GravityController:isTooFarFromAnyPlanet()
+	local _, dist = findClosestPlanet(self.planetsFolder, self.root.Position)
+	return not dist or dist > MAX_DISTANCE
+end
+
+function GravityController:getNearestPlanet()
+	local planet = select(1, findClosestPlanet(self.planetsFolder, self.root.Position))
+	return planet
+end
+
 function GravityController:update(dt: number)
        if not self.root or not self.humanoid then
+               warn("[GravityController] Missing root or humanoid")
                return
        end
 
-       if self.humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
-               if self.force.Enabled then
-                       self.force.Enabled = false
-                       self.force.Force = Vector3.zero
+	self.lastVelocity = self.root.AssemblyLinearVelocity
+
+	if self:isGrounded() then
+		if self.force.Enabled then
+			self.force.Enabled = false
+			self.force.Force = Vector3.zero
+		end
+		if self.orientation.Enabled then
+			self.orientation.Enabled = false
+		end
+
+		self.fallTime = 0
+		if self.isOutOfBounds then
+			self.root:SetAttribute("IsOutOfBounds", false)
+		end
+		self.isOutOfBounds = false
+		self.reboundTarget = nil
+		self.reboundLaunched = false
+
+		return
+	end
+
+	local rootPos = self.root.Position
+	local planet = findNearestPlanet(self.planetsFolder, rootPos)
+
+	if self:isFalling() and self:isTooFarFromAnyPlanet() then
+		self.fallTime += dt
+	else
+		self.fallTime = 0
+	end
+
+       if self.fallTime >= FALL_TIME_LIMIT and not self.isOutOfBounds then
+               debugPrint("Out of bounds detected for", self.root:GetFullName())
+               self.isOutOfBounds = true
+               self.root:SetAttribute("IsOutOfBounds", true)
+
+               self.storedSpeed = self.lastVelocity.Magnitude
+               self.reboundTarget = self:getNearestPlanet()
+               if not self.reboundTarget then
+                       warn("[GravityController] No planet found for rebound")
                end
-               if self.orientation.Enabled then
-                       self.orientation.Enabled = false
+               self.reboundLaunched = false
+
+               self.root.AssemblyLinearVelocity = Vector3.zero
+
+               task.delay(REBOUND_SOFT_TIME, function()
+                       if not self.root then
+                               warn("[GravityController] Root missing during rebound")
+                               return
+                       end
+                       if not self.reboundTarget then
+                               warn("[GravityController] Rebound target missing during launch")
+                               return
+                       end
+
+                       local dir = (self.reboundTarget.Position - self.root.Position).Unit
+                       local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
+                       debugPrint("Launching rebound with velocity", reboundVel)
+                       self.root.AssemblyLinearVelocity = reboundVel
+                       self.reboundLaunched = true
+               end)
+
+               task.delay(REBOUND_COOLDOWN, function()
+                       if self.root then
+                               self.root:SetAttribute("IsOutOfBounds", false)
+                       end
+                       self.isOutOfBounds = false
+                       self.reboundLaunched = false
+                       self.reboundTarget = nil
+                       debugPrint("Rebound cooldown complete")
+               end)
+
+		self.fallTime = 0
+	end
+
+       if self.isOutOfBounds and self.reboundLaunched and self.reboundTarget then
+               local dir = (self.reboundTarget.Position - rootPos).Unit
+               local current = self.root.AssemblyLinearVelocity
+               if current.Magnitude == 0 or current.Unit:Dot(dir) < 0.9 then
+                       local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
+                       debugPrint("Correcting rebound direction", reboundVel)
+                       self.root.AssemblyLinearVelocity = reboundVel
                end
-
-               self.fallTime = 0
-               self.prevDistance = nil
-
-               return
-       end
-
-       local rootPos = self.root.Position
-       local planet = findNearestPlanet(self.planetsFolder, rootPos)
-
-       local distance = planet and (planet.Position - rootPos).Magnitude or nil
-
-       if distance then
-               if self.prevDistance and distance > self.prevDistance then
-                       self.fallTime += dt
-               else
-                       self.fallTime = 0
-               end
-               self.prevDistance = distance
-       else
-               self.fallTime += dt
-       end
-
-       if planet then
-               local direction = (planet.Position - rootPos).Unit
-               self.force.Force = direction * self.root.AssemblyMass * Config.PLANET_GRAVITY
+               self.force.Force = dir * self.root.AssemblyMass * Config.PLANET_GRAVITY
                self.force.Enabled = true
 
-               local up = -direction
-               local look = self.root.CFrame.LookVector
-               self.orientation.CFrame = CFrame.lookAt(rootPos, rootPos + look, up)
-               self.orientation.Enabled = true
-       else
-               if self.force.Enabled then
-                       self.force.Enabled = false
-                       self.force.Force = Vector3.zero
-               end
-               if self.orientation.Enabled then
-                       self.orientation.Enabled = false
-               end
-       end
+		local up = -dir
+		local look = self.root.CFrame.LookVector
+		self.orientation.CFrame = CFrame.lookAt(rootPos, rootPos + look, up)
+		self.orientation.Enabled = true
+	elseif planet then
+		local direction = (planet.Position - rootPos).Unit
+		self.force.Force = direction * self.root.AssemblyMass * Config.PLANET_GRAVITY
+		self.force.Enabled = true
+
+		local up = -direction
+		local look = self.root.CFrame.LookVector
+		self.orientation.CFrame = CFrame.lookAt(rootPos, rootPos + look, up)
+		self.orientation.Enabled = true
+	else
+		if self.force.Enabled then
+			self.force.Enabled = false
+			self.force.Force = Vector3.zero
+		end
+		if self.orientation.Enabled then
+			self.orientation.Enabled = false
+		end
+	end
 end
 
 return GravityController

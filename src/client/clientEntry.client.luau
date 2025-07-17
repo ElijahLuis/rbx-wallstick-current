@@ -76,39 +76,6 @@ local function onCharacterAdded(character: Model)
 	local hrp = humanoid and humanoid.RootPart :: BasePart
 
 	local cleanupDoubleJump = DoubleJump.setup(wallstick.fake.humanoid, wallstick.real.humanoid)
-	local fallTime = 0
-
-	local function getPlanets()
-		local list = {}
-		for _, obj in ipairs(workspace:GetChildren()) do
-			if obj:IsA("BasePart") and obj.Name:sub(1, 6) == "Planet" then
-				table.insert(list, obj)
-			end
-		end
-		return list
-	end
-
-	local planets = getPlanets()
-	local spawnLocation = workspace:FindFirstChild("SpawnLocation")
-
-	local function findNearestPlanet()
-		local closest
-		local closestDist = math.huge
-		local pos = hrp.Position
-
-               for _, planet in ipairs(planets) do
-                       local dist = (planet.Position - pos).Magnitude
-                       local radius = math.max(planet.Size.X, planet.Size.Y, planet.Size.Z)
-                               * 0.5
-                               * Config.PLANET_ORBIT_MULTIPLIER
-                       if dist <= radius and dist < closestDist then
-                               closest = planet
-                               closestDist = dist
-                       end
-               end
-
-		return closest
-	end
 
 	local rayParams = RaycastHelper.params({
 		filterType = Enum.RaycastFilterType.Exclude,
@@ -139,59 +106,36 @@ local function onCharacterAdded(character: Model)
 		return best
 	end
 
-       local simulationConnection = RunService.PreSimulation:Connect(function(dt)
+	local simulationConnection = RunService.PreSimulation:Connect(function(dt)
+		if not wallstick:isEnabled() then
+			return
+		end
 
-                if not wallstick:isEnabled() then
-                        return
-                end
+		local hipHeight = humanoid.HipHeight
+		if humanoid.RigType == Enum.HumanoidRigType.R6 then
+			hipHeight = 2
+		end
 
-                if wallstick:getFallDistance() < -Config.MAX_FALL_DISTANCE then
-                        wallstick:set(workspace.Terrain, Vector3.yAxis)
-                        return
-                end
+		local hrpCF = hrp.CFrame
+		local result = RaycastHelper.raycast({
+			origin = hrpCF.Position,
+			direction = -(hipHeight + hrp.Size.Y / 2 + Config.STICK_RANGE) * hrpCF.YVector,
+			filter = ignoreCharacterParts,
+			rayParams = rayParams,
+		})
 
-                local hipHeight = humanoid.HipHeight
-                if humanoid.RigType == Enum.HumanoidRigType.R6 then
-                        hipHeight = 2
-                end
+		if result then
+			local stickPart = (result.Instance :: BasePart).AssemblyRootPart
+			local stickNormal = stickPart.CFrame:VectorToObjectSpace(result.Normal)
 
-                local hrpCF = hrp.CFrame
-                local result = RaycastHelper.raycast({
-                        origin = hrpCF.Position,
-                        direction = -(hipHeight + hrp.Size.Y / 2 + Config.STICK_RANGE) * hrpCF.YVector,
-                        filter = ignoreCharacterParts,
-                        rayParams = rayParams,
-                })
+			wallstick:setAndPivot(stickPart, stickNormal, result.Position)
+		end
+	end)
 
-                if result then
-                        local stickPart = (result.Instance :: BasePart).AssemblyRootPart
-                        local stickNormal = stickPart.CFrame:VectorToObjectSpace(result.Normal)
-
-                        wallstick:setAndPivot(stickPart, stickNormal, result.Position)
-                        fallTime = 0
-                else
-                        if wallstick.fake.humanoid:GetState() == Enum.HumanoidStateType.Freefall then
-                                fallTime += dt
-
-                               if fallTime >= Config.RESPAWN_TIME then
-                                       if spawnLocation then
-                                               hrp.AssemblyLinearVelocity = Vector3.zero
-                                               hrp.CFrame = spawnLocation.CFrame
-                                                       * CFrame.new(0, spawnLocation.Size.Y / 2 + humanoid.HipHeight, 0)
-                                               wallstick:set(workspace.Terrain, Vector3.yAxis)
-                                       end
-                                       fallTime = 0
-                               end
-                       else
-                               fallTime = 0
-                       end
-                end
-        end)
-
-        humanoid.Died:Wait()
-       simulationConnection:Disconnect()
-       cleanupDoubleJump()
-       wallstick:Destroy()
+	humanoid.Died:Wait()
+	simulationConnection:Disconnect()
+	cleanupDoubleJump()
+	wallstick:Destroy()
 end
 
 assert(not workspace.StreamingEnabled, "Wallstick does not support streaming enabled.")
