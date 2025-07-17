@@ -175,14 +175,8 @@ function GravityController:update(dt: number)
 		self.root.AssemblyLinearVelocity = Vector3.zero
 
 		task.delay(REBOUND_SOFT_TIME, function()
-			if not self.root or not self.reboundTarget then
+			if not self.root or not self.reboundTarget or not self.humanoid then
 				return
-			end
-			local dir = (self.reboundTarget.Position - self.root.Position).Unit
-			local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
-			self.root.AssemblyLinearVelocity = reboundVel
-			if self.humanoid then
-				self.humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 			end
 
 			local platform = Instance.new("Part")
@@ -192,11 +186,27 @@ function GravityController:update(dt: number)
 			platform.Transparency = 1
 			platform.CanCollide = true
 			platform.Parent = workspace
-			task.delay(0.1, function()
-				platform:Destroy()
-			end)
 
-			self.reboundLaunched = true
+			self.root.Anchored = true
+			print("Rebound pre-state:", self.humanoid:GetState().Name)
+
+			task.delay(0.1, function()
+				if not self.root or not self.reboundTarget then
+					platform:Destroy()
+					return
+				end
+
+				self.root.Anchored = false
+				local dir = (self.reboundTarget.Position - self.root.Position).Unit
+				local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
+				self.root.AssemblyLinearVelocity = reboundVel
+
+				self.humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+				print("Rebound post-state:", self.humanoid:GetState().Name)
+
+				platform:Destroy()
+				self.reboundLaunched = true
+			end)
 		end)
 
 		task.delay(REBOUND_COOLDOWN, function()
