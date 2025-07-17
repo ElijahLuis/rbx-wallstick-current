@@ -94,5 +94,3 @@ return function(PlayerModule)
 	local cameraModule = PlayerModule:GetCameras()
 	patchCameraModule(cameraModule)
 end
-
-
