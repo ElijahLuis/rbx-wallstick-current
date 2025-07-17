@@ -8,6 +8,7 @@ local MAX_DISTANCE = Config.MAX_DISTANCE
 local REBOUND_FORCE_MULTIPLIER = Config.REBOUND_FORCE_MULTIPLIER
 local REBOUND_COOLDOWN = Config.REBOUND_COOLDOWN
 local REBOUND_SOFT_TIME = Config.REBOUND_SOFT_TIME
+local GROUND_CHECK_DISTANCE = 4
 
 export type GravityController = {
 	root: BasePart,
@@ -21,6 +22,7 @@ export type GravityController = {
 	reboundTarget: BasePart?,
 	reboundLaunched: boolean,
 	storedSpeed: number,
+	rayParams: RaycastParams,
 }
 
 local GravityController = {}
@@ -61,6 +63,12 @@ function GravityController.new(character: Model, planetsFolder: Folder): Gravity
 	orient.Enabled = false
 	orient.Parent = self.root
 	self.orientation = orient
+
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { character }
+	params.IgnoreWater = true
+	self.rayParams = params
 
 	self.fallTime = 0
 	self.lastVelocity = Vector3.zero
@@ -117,8 +125,13 @@ local function findClosestPlanet(planets: Folder, position: Vector3)
 	return closest, closestDist
 end
 
+function GravityController:isGrounded()
+	local result = workspace:Raycast(self.root.Position, Vector3.new(0, -GROUND_CHECK_DISTANCE, 0), self.rayParams)
+	return result ~= nil
+end
+
 function GravityController:isFalling()
-	return self.humanoid:GetState() == Enum.HumanoidStateType.Freefall and self.root.AssemblyLinearVelocity.Y < 0
+	return self.root.AssemblyLinearVelocity.Y < -0.1 and not self:isGrounded()
 end
 
 function GravityController:isTooFarFromAnyPlanet()
@@ -138,7 +151,7 @@ function GravityController:update(dt: number)
 
 	self.lastVelocity = self.root.AssemblyLinearVelocity
 
-	if self.humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
+	if self:isGrounded() then
 		if self.force.Enabled then
 			self.force.Enabled = false
 			self.force.Force = Vector3.zero
@@ -148,6 +161,9 @@ function GravityController:update(dt: number)
 		end
 
 		self.fallTime = 0
+		if self.isOutOfBounds then
+			self.root:SetAttribute("IsOutOfBounds", false)
+		end
 		self.isOutOfBounds = false
 		self.reboundTarget = nil
 		self.reboundLaunched = false
@@ -175,38 +191,14 @@ function GravityController:update(dt: number)
 		self.root.AssemblyLinearVelocity = Vector3.zero
 
 		task.delay(REBOUND_SOFT_TIME, function()
-			if not self.root or not self.reboundTarget or not self.humanoid then
+			if not self.root or not self.reboundTarget then
 				return
 			end
 
-			local platform = Instance.new("Part")
-			platform.Size = Vector3.new(10, 1, 10)
-			platform.CFrame = self.root.CFrame * CFrame.new(0, -3, 0)
-			platform.Anchored = true
-			platform.Transparency = 1
-			platform.CanCollide = true
-			platform.Parent = workspace
-
-			self.root.Anchored = true
-			print("Rebound pre-state:", self.humanoid:GetState().Name)
-
-			task.delay(0.1, function()
-				if not self.root or not self.reboundTarget then
-					platform:Destroy()
-					return
-				end
-
-				self.root.Anchored = false
-				local dir = (self.reboundTarget.Position - self.root.Position).Unit
-				local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
-				self.root.AssemblyLinearVelocity = reboundVel
-
-				self.humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-				print("Rebound post-state:", self.humanoid:GetState().Name)
-
-				platform:Destroy()
-				self.reboundLaunched = true
-			end)
+			local dir = (self.reboundTarget.Position - self.root.Position).Unit
+			local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
+			self.root.AssemblyLinearVelocity = reboundVel
+			self.reboundLaunched = true
 		end)
 
 		task.delay(REBOUND_COOLDOWN, function()

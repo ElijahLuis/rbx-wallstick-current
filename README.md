@@ -24,11 +24,15 @@ Wallstick allows characters to walk on arbitrary surfaces using a combination of
 - Tweak movement parameters via `ReplicatedStorage.WallstickConfig`:
 - `STICK_RANGE`
 - `DETECTION_SHAPE`
-- `FALL_TIME_LIMIT`
-- `MAX_DISTANCE`
-- `REBOUND_FORCE_MULTIPLIER`
-- `REBOUND_SOFT_TIME`
-- `REBOUND_COOLDOWN`
+- `FALL_TIME_LIMIT` – seconds a character can fall before a rebound triggers
+- `MAX_DISTANCE` – distance from planets that counts as out of bounds
+- `REBOUND_FORCE_MULTIPLIER` – rebound strength relative to stored speed
+- `REBOUND_SOFT_TIME` – pause before launching the rebound
+- `REBOUND_COOLDOWN` – time before another rebound can occur
+
+When out of bounds, `GravityController` launches the character toward the nearest
+planet using their stored speed. A downward raycast ends the rebound once the
+character touches ground.
 
 ## Demo
 A ready-made place to test the Wallstick module can be found at `demo/playground.rbxl`. 
