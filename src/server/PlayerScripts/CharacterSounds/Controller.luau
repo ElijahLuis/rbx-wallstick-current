@@ -19,7 +19,7 @@ type PlayerState = {
 local statesByPlayer: { [Player]: PlayerState } = {}
 
 local function terminateSound(player: Player)
-        local state = statesByPlayer[player]
+	local state = statesByPlayer[player]
 	if state and state.terminateSound then
 		state.terminateSound()
 		state.terminateSound = nil
@@ -33,7 +33,7 @@ end
 local function characterAdded(player: Player, character: Model)
 	characterRemoving(player, character)
 
-        local state = statesByPlayer[player]
+	local state = statesByPlayer[player]
 	if state then
 		local performer = state.performer or character
 		local controller = CharacterSounds.listen(performer, character)
@@ -45,14 +45,14 @@ end
 local function playerRemoving(player: Player)
 	terminateSound(player)
 
-        local state = statesByPlayer[player]
+	local state = statesByPlayer[player]
 	if state then
 		for _, connection in state.connections do
 			connection:Disconnect()
 		end
 	end
 
-        statesByPlayer[player] = nil
+	statesByPlayer[player] = nil
 end
 
 local function playerAdded(player: Player)
@@ -82,7 +82,7 @@ local function playerAdded(player: Player)
 		end)
 	)
 
-        statesByPlayer[player] = state
+	statesByPlayer[player] = state
 end
 
 for _, player in Players:GetPlayers() do
@@ -95,7 +95,7 @@ Players.PlayerRemoving:Connect(playerRemoving)
 -- Public
 
 function CharacterSoundsManager.setPerformer(player: Player, performer: Model?)
-        local state = statesByPlayer[player]
+	local state = statesByPlayer[player]
 	if state then
 		state.performer = performer
 
