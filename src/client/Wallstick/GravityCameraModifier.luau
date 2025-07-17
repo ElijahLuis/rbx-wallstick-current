@@ -92,4 +92,12 @@ local function patchCameraModule(cameraModule: any)
 		return originalUpdate(self, dt)
 	end
 end
-return patchCameraModule
+
+return function(cameraModule)
+	patchCameraModule(cameraModule)
+	return cameraModule
+end
+
+print("[Modifier] Patched cameraModule.SetSpinPart =", cameraModule.SetSpinPart) --debug
+
+
