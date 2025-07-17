@@ -88,7 +88,7 @@ local function patchCameraModule(cameraModule: any)
 	end
 end
 
-local patchCameraModule = require(game.ReplicatedStorage.Wallstick.PatchCameraModule)
+local patchCameraModule = require(game.ReplicatedStorage:WaitForChild("Wallstick"))
 
 return function(PlayerModule)
 	local cameraModule = PlayerModule:GetCameras()
