@@ -19,6 +19,7 @@ local playerScripts = localPlayer:WaitForChild("PlayerScripts")
 -- stylua: ignore
 local playerModuleObject = require(playerScripts:WaitForChild("PlayerModule")) :: any
 local cameraModuleObject = playerModuleObject:GetCameras() :: any
+print("[GravityCamera] cameraModuleObject.SetSpinPart =", cameraModuleObject.SetSpinPart)
 local controlModuleObject = playerModuleObject:GetControls() :: any
 
 local GravityCamera = {}
@@ -40,7 +41,7 @@ function GravityCamera.getSpinPart(): BasePart
 end
 
 -- Sets the part used for spin calculations
-function GravityCamera.SetSpinPart(part: BasePart)
+function GravityCamera.setSpinPart(part: BasePart)
 	cameraModuleObject:SetSpinPart(part)
 end
 
