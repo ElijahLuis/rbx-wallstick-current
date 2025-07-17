@@ -61,21 +61,6 @@ local function patchCameraModule(cameraModule: any)
 		return math.atan2(v2.X * v1.Z - v2.Z * v1.X, v2.X * v1.X + v2.Z * v1.Z)
 	end
 
-	print("CameraModule type:", typeof(cameraModule))
-	print(
-		"CameraModule keys:",
-		table.concat(
-			(function()
-				local keys = {}
-				for k in pairs(cameraModule) do
-					table.insert(keys, tostring(k))
-				end
-				return keys
-			end)(),
-			", "
-		)
-	)
-
 	-- Override cameraModule methods
 	function cameraModule:GetUpVector()
 		return upVector
