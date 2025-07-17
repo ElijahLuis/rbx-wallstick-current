@@ -4,59 +4,51 @@ print("[GravityCamera] Loaded completely")
 
 --[=[
 	@class GravityCamera
-
-	This module acts as a typed interface for client-sided control of the modifications made to the camera controller.
+	Client-side interface for interacting with the modified camera controller.
 ]=]
 
 local Players = game:GetService("Players")
-
---
--- Resolve PlayerModule lazily in case the LocalPlayer hasn't loaded yet.
---
 local localPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 local playerScripts = localPlayer:WaitForChild("PlayerScripts")
 
--- stylua: ignore
-local playerModuleObject = require(playerScripts:WaitForChild("PlayerModule")) :: any
+local playerModuleObject = require(playerScripts:WaitForChild("PlayerModule"))
+
+-- Patch the camera module before accessing it
+local GravityCameraModifier = require(game.ReplicatedStorage.Wallstick.GravityCameraModifier)
+GravityCameraModifier(playerModuleObject)
+
 local cameraModuleObject = playerModuleObject:GetCameras() :: any
 print("[GravityCamera] cameraModuleObject.SetSpinPart =", cameraModuleObject.SetSpinPart)
+
 local controlModuleObject = playerModuleObject:GetControls() :: any
 
 local GravityCamera = {}
-
--- Returns the current up vector used by the camera
 
 function GravityCamera.getUpVector(): Vector3
 	return cameraModuleObject:GetUpVector()
 end
 
--- Sets the target up vector for the camera
 function GravityCamera.setUpVector(target: Vector3)
 	cameraModuleObject:SetTargetUpVector(target)
 end
 
--- Gets the current spin part
 function GravityCamera.getSpinPart(): BasePart
 	return cameraModuleObject:GetSpinPart()
 end
 
--- Sets the part used for spin calculations
 function GravityCamera.setSpinPart(part: BasePart)
 	cameraModuleObject:SetSpinPart(part)
 end
 
--- Returns the rotation mode from the camera module
 function GravityCamera.getRotationType(): Enum.RotationType
 	return cameraModuleObject:GetRotationType()
 end
 
--- Maps a world relative move vector into camera space
 function GravityCamera.getMoveVector(cameraCF: CFrame, inputMove: Vector3?): Vector3
 	local move = inputMove or controlModuleObject:GetMoveVector() :: Vector3
 	local _, _, _, r00, r01, r02, _, r11, r12, _, _, r22 = cameraCF:GetComponents()
 
 	local c, s
-	-- default to positive when r11 is 0 to avoid dropping horizontal input
 	local q = if r11 >= 0 then 1 else -1
 
 	if r12 < 1 and r12 > -1 then
