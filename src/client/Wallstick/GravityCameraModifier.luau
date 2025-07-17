@@ -3,7 +3,7 @@
 local function patchCameraModule(playerModuleObject: any)
 	print("[Modifier] GravityCameraModifier running...")
 
-	local cameraModule = playerModuleObject:originalGetCameras() -- keep the original behavior
+	local cameraModule = playerModuleObject:GetCameras()
 	local transitionRate: number = 1
 
 	local upCFrame: CFrame = CFrame.identity
