@@ -94,10 +94,8 @@ local function patchCameraModule(cameraModule: any)
 end
 
 return function(cameraModule)
+	print("[Modifier] GravityCameraModifier running...")
 	patchCameraModule(cameraModule)
+	print("[Modifier] Patched cameraModule.SetSpinPart =", cameraModule.SetSpinPart)
 	return cameraModule
 end
-
-print("[Modifier] Patched cameraModule.SetSpinPart =", cameraModule.SetSpinPart) --debug
-
-
