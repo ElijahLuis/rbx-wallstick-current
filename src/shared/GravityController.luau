@@ -10,6 +10,10 @@ local REBOUND_COOLDOWN = Config.REBOUND_COOLDOWN
 local REBOUND_SOFT_TIME = Config.REBOUND_SOFT_TIME
 local GROUND_CHECK_DISTANCE = 4
 
+local function debugPrint(...)
+       print("[GravityController]", ...)
+end
+
 export type GravityController = {
 	root: BasePart,
 	humanoid: Humanoid,
@@ -145,9 +149,10 @@ function GravityController:getNearestPlanet()
 end
 
 function GravityController:update(dt: number)
-	if not self.root or not self.humanoid then
-		return
-	end
+       if not self.root or not self.humanoid then
+               warn("[GravityController] Missing root or humanoid")
+               return
+       end
 
 	self.lastVelocity = self.root.AssemblyLinearVelocity
 
@@ -180,48 +185,60 @@ function GravityController:update(dt: number)
 		self.fallTime = 0
 	end
 
-	if self.fallTime >= FALL_TIME_LIMIT and not self.isOutOfBounds then
-		self.isOutOfBounds = true
-		self.root:SetAttribute("IsOutOfBounds", true)
+       if self.fallTime >= FALL_TIME_LIMIT and not self.isOutOfBounds then
+               debugPrint("Out of bounds detected for", self.root:GetFullName())
+               self.isOutOfBounds = true
+               self.root:SetAttribute("IsOutOfBounds", true)
 
-		self.storedSpeed = self.lastVelocity.Magnitude
-		self.reboundTarget = self:getNearestPlanet()
-		self.reboundLaunched = false
+               self.storedSpeed = self.lastVelocity.Magnitude
+               self.reboundTarget = self:getNearestPlanet()
+               if not self.reboundTarget then
+                       warn("[GravityController] No planet found for rebound")
+               end
+               self.reboundLaunched = false
 
-		self.root.AssemblyLinearVelocity = Vector3.zero
+               self.root.AssemblyLinearVelocity = Vector3.zero
 
-		task.delay(REBOUND_SOFT_TIME, function()
-			if not self.root or not self.reboundTarget then
-				return
-			end
+               task.delay(REBOUND_SOFT_TIME, function()
+                       if not self.root then
+                               warn("[GravityController] Root missing during rebound")
+                               return
+                       end
+                       if not self.reboundTarget then
+                               warn("[GravityController] Rebound target missing during launch")
+                               return
+                       end
 
-			local dir = (self.reboundTarget.Position - self.root.Position).Unit
-			local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
-			self.root.AssemblyLinearVelocity = reboundVel
-			self.reboundLaunched = true
-		end)
+                       local dir = (self.reboundTarget.Position - self.root.Position).Unit
+                       local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
+                       debugPrint("Launching rebound with velocity", reboundVel)
+                       self.root.AssemblyLinearVelocity = reboundVel
+                       self.reboundLaunched = true
+               end)
 
-		task.delay(REBOUND_COOLDOWN, function()
-			if self.root then
-				self.root:SetAttribute("IsOutOfBounds", false)
-			end
-			self.isOutOfBounds = false
-			self.reboundLaunched = false
-			self.reboundTarget = nil
-		end)
+               task.delay(REBOUND_COOLDOWN, function()
+                       if self.root then
+                               self.root:SetAttribute("IsOutOfBounds", false)
+                       end
+                       self.isOutOfBounds = false
+                       self.reboundLaunched = false
+                       self.reboundTarget = nil
+                       debugPrint("Rebound cooldown complete")
+               end)
 
 		self.fallTime = 0
 	end
 
-	if self.isOutOfBounds and self.reboundLaunched and self.reboundTarget then
-		local dir = (self.reboundTarget.Position - rootPos).Unit
-		local current = self.root.AssemblyLinearVelocity
-		if current.Magnitude == 0 or current.Unit:Dot(dir) < 0.9 then
-			local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
-			self.root.AssemblyLinearVelocity = reboundVel
-		end
-		self.force.Force = dir * self.root.AssemblyMass * Config.PLANET_GRAVITY
-		self.force.Enabled = true
+       if self.isOutOfBounds and self.reboundLaunched and self.reboundTarget then
+               local dir = (self.reboundTarget.Position - rootPos).Unit
+               local current = self.root.AssemblyLinearVelocity
+               if current.Magnitude == 0 or current.Unit:Dot(dir) < 0.9 then
+                       local reboundVel = dir * self.storedSpeed * REBOUND_FORCE_MULTIPLIER
+                       debugPrint("Correcting rebound direction", reboundVel)
+                       self.root.AssemblyLinearVelocity = reboundVel
+               end
+               self.force.Force = dir * self.root.AssemblyMass * Config.PLANET_GRAVITY
+               self.force.Enabled = true
 
 		local up = -dir
 		local look = self.root.CFrame.LookVector
