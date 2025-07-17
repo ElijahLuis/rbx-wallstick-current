@@ -1,9 +1,7 @@
 --!strict
 local patched = setmetatable({}, { __mode = "k" })
 
-local Patch = {}
-
-function Patch.redirect(cameraModule: any)
+local function apply(cameraModule: any)
 	if typeof(cameraModule) == "table" and not patched[cameraModule] then
 		patched[cameraModule] = true
 		local patchCamera = require(game.ReplicatedStorage.Wallstick.PatchCameraModule)
@@ -11,4 +9,10 @@ function Patch.redirect(cameraModule: any)
 	end
 end
 
-return Patch
+local Patch = { redirect = apply }
+
+return setmetatable(Patch, {
+	__call = function(_, cameraModule: any)
+		apply(cameraModule)
+	end,
+})
