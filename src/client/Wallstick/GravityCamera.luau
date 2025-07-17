@@ -1,5 +1,7 @@
 --!strict
 
+print("[GravityCamera] Loaded completely")
+
 --[=[
 	@class GravityCamera
 

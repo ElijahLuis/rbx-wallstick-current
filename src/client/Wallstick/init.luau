@@ -9,6 +9,7 @@ local Trove = require(SharedPackages.Trove)
 
 local Replication = require(script.Replication)
 local GravityCamera = require(script.GravityCamera)
+print("[WallstickClient] GravityCamera table:", GravityCamera)
 local RotationSpring = require(script.RotationSpring)
 local CharacterHelper = require(script.CharacterHelper)
 local RotationUtils = require(script.RotationUtils)
@@ -145,8 +146,16 @@ function WallstickClass.new(options: Options): Wallstick
 		RunService:UnbindFromRenderStep(renderBeforeCameraBindKey)
 		RunService:UnbindFromRenderStep(renderCharacterBindKey)
 
-		GravityCamera.setSpinPart(workspace.Terrain)
-		GravityCamera.setUpVector(Vector3.yAxis)
+		if GravityCamera and GravityCamera.setSpinPart then
+			GravityCamera.setSpinPart(workspace.Terrain)
+		else
+			warn("GravityCamera.setSpinPart is missing")
+		end
+		if GravityCamera and GravityCamera.setUpVector then
+			GravityCamera.setUpVector(Vector3.yAxis)
+		else
+			warn("GravityCamera.setUpVector is missing")
+		end
 
 		CharacterHelper.setMyPerformer(self.real.character, nil)
 
@@ -317,7 +326,11 @@ function WallstickClass._stepRenderBeforeCamera(self: Wallstick, dt: number)
 	local upVector = self.cameraUpSpring:getPosition().YVector
 	local worldUpVector = self.part.CFrame:VectorToWorldSpace(upVector)
 
-	GravityCamera.setUpVector(worldUpVector)
+	if GravityCamera and GravityCamera.setUpVector then
+		GravityCamera.setUpVector(worldUpVector)
+	else
+		warn("GravityCamera.setUpVector is missing")
+	end
 end
 
 function WallstickClass._stepRenderCharacter(self: Wallstick, _dt: number)
@@ -330,9 +343,15 @@ function WallstickClass._stepRenderCharacter(self: Wallstick, _dt: number)
 	local geometryCameraCF = self.fake.rootPart.CFrame * rootCameraOffset
 
 	self.fake.humanoid.Jump = self.real.humanoid.Jump
-	self.fake.humanoid:Move(GravityCamera.getMoveVector(geometryCameraCF), false)
+	if GravityCamera and GravityCamera.getMoveVector then
+		self.fake.humanoid:Move(GravityCamera.getMoveVector(geometryCameraCF), false)
+	end
 
-	if GravityCamera.getRotationType() == Enum.RotationType.CameraRelative then
+	if
+		GravityCamera
+		and GravityCamera.getRotationType
+		and GravityCamera.getRotationType() == Enum.RotationType.CameraRelative
+	then
 		local right = GravityCamera.getMoveVector(geometryCameraCF, Vector3.xAxis)
 		local rotation = CFrame.fromMatrix(Vector3.zero, right, Vector3.yAxis)
 		self.fake.alignOrientation.CFrame = rotation
@@ -417,7 +436,11 @@ function WallstickClass.set(self: Wallstick, part: BasePart, normal: Vector3, te
 	self.normal = normal
 
 	if self.options.camera.spin then
-		GravityCamera.setSpinPart(self.part)
+		if GravityCamera and GravityCamera.setSpinPart then
+			GravityCamera.setSpinPart(self.part)
+		else
+			warn("GravityCamera.setSpinPart is missing")
+		end
 	end
 
 	local originCF = self:_getOriginCFrame()
