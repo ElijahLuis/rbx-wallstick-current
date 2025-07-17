@@ -62,22 +62,42 @@ local function patchCameraModule(cameraModule: any)
 	end
 
 	print("CameraModule type:", typeof(cameraModule))
-	print("CameraModule keys:", table.concat((function()
-	local keys = {}
-		for k in pairs(cameraModule) do
-			table.insert(keys, tostring(k))
-		end
-	return keys
-	end)(), ", "))
+	print(
+		"CameraModule keys:",
+		table.concat(
+			(function()
+				local keys = {}
+				for k in pairs(cameraModule) do
+					table.insert(keys, tostring(k))
+				end
+				return keys
+			end)(),
+			", "
+		)
+	)
 
 	-- Override cameraModule methods
-	function cameraModule:GetUpVector() return upVector end
-	function cameraModule:GetTargetUpVector() return targetUpVector end
-	function cameraModule:SetTargetUpVector(target: Vector3) targetUpVector = target end
-	function cameraModule:GetSpinPart() return spinPart end
-	function cameraModule:SetSpinPart(part: BasePart) spinPart = part end
-	function cameraModule:SetTransitionRate(rate: number) transitionRate = rate end
-	function cameraModule:GetTransitionRate(): number return transitionRate end
+	function cameraModule:GetUpVector()
+		return upVector
+	end
+	function cameraModule:GetTargetUpVector()
+		return targetUpVector
+	end
+	function cameraModule:SetTargetUpVector(target: Vector3)
+		targetUpVector = target
+	end
+	function cameraModule:GetSpinPart()
+		return spinPart
+	end
+	function cameraModule:SetSpinPart(part: BasePart)
+		spinPart = part
+	end
+	function cameraModule:SetTransitionRate(rate: number)
+		transitionRate = rate
+	end
+	function cameraModule:GetTransitionRate(): number
+		return transitionRate
+	end
 
 	-- Patch main camera update to include our steps
 	local originalUpdate = cameraModule.Update
