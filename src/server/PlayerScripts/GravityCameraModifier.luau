@@ -1,13 +1,18 @@
 --!strict
 return function(PlayerModule)
-	local pm = if typeof(PlayerModule) == "Instance" then require(PlayerModule) else PlayerModule
-	local cameraModule = pm:GetCameras()
-
-	if typeof(cameraModule) == "table" then
-		local function applyPatch()
-			local patchCameraModule = require(game.ReplicatedStorage.Wallstick.PatchCameraModule)
-			patchCameraModule(cameraModule)
-		end
-		applyPatch()
+	if typeof(PlayerModule) ~= "table" then
+		return
 	end
+
+	if typeof(PlayerModule.GetCameras) ~= "function" then
+		return
+	end
+
+	local cameraModule = PlayerModule:GetCameras()
+	if typeof(cameraModule) ~= "table" then
+		return
+	end
+
+	local patchCameraModule = require(game.ReplicatedStorage.Wallstick.PatchCameraModule)
+	patchCameraModule(cameraModule)
 end
