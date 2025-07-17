@@ -18,9 +18,23 @@ end
 
 local Config = require(ReplicatedStorage:WaitForChild("WallstickConfig"))
 
-local WallstickClass = require(ReplicatedStorage.Wallstick)
-local Replication = require(ReplicatedStorage.Wallstick.Replication)
-local DoubleJump = require(ReplicatedStorage.Wallstick.DoubleJump)
+local okWallstick, WallstickClass = pcall(require, ReplicatedStorage:FindFirstChild("Wallstick"))
+if not okWallstick then
+	warn("[Wallstick] Failed to load Wallstick class.")
+	return
+end
+
+local okReplication, Replication = pcall(require, ReplicatedStorage.Wallstick:FindFirstChild("Replication"))
+if not okReplication then
+	warn("[Wallstick] Replication module missing.")
+	return
+end
+
+local okDoubleJump, DoubleJump = pcall(require, ReplicatedStorage.Wallstick:FindFirstChild("DoubleJump"))
+if not okDoubleJump then
+	warn("[Wallstick] Failed to load DoubleJump module.")
+	return
+end
 
 local LIMB_NAMES: { [string]: boolean } = {
 	-- R6
@@ -73,7 +87,7 @@ local function onCharacterAdded(character: Model)
 
 	local humanoid = character and character:WaitForChild("Humanoid") :: Humanoid
 	humanoid.WalkSpeed = 20
-	local hrp = humanoid and humanoid.RootPart :: BasePart
+	local hrp = humanoid.RootPart or humanoid:WaitForChild("HumanoidRootPart")
 
 	local cleanupDoubleJump = DoubleJump.setup(wallstick.fake.humanoid, wallstick.real.humanoid)
 

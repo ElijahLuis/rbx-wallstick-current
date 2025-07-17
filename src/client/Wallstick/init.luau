@@ -145,8 +145,12 @@ function WallstickClass.new(options: Options): Wallstick
 		RunService:UnbindFromRenderStep(renderBeforeCameraBindKey)
 		RunService:UnbindFromRenderStep(renderCharacterBindKey)
 
-		GravityCamera.setSpinPart(workspace.Terrain)
-		GravityCamera.setUpVector(Vector3.yAxis)
+		if GravityCamera.setSpinPart then
+			GravityCamera.setSpinPart(workspace.Terrain)
+		end
+		if GravityCamera.setUpVector then
+			GravityCamera.setUpVector(Vector3.yAxis)
+		end
 
 		CharacterHelper.setMyPerformer(self.real.character, nil)
 
@@ -317,7 +321,9 @@ function WallstickClass._stepRenderBeforeCamera(self: Wallstick, dt: number)
 	local upVector = self.cameraUpSpring:getPosition().YVector
 	local worldUpVector = self.part.CFrame:VectorToWorldSpace(upVector)
 
-	GravityCamera.setUpVector(worldUpVector)
+	if GravityCamera.setUpVector then
+		GravityCamera.setUpVector(worldUpVector)
+	end
 end
 
 function WallstickClass._stepRenderCharacter(self: Wallstick, _dt: number)
@@ -330,10 +336,14 @@ function WallstickClass._stepRenderCharacter(self: Wallstick, _dt: number)
 	local geometryCameraCF = self.fake.rootPart.CFrame * rootCameraOffset
 
 	self.fake.humanoid.Jump = self.real.humanoid.Jump
-	self.fake.humanoid:Move(GravityCamera.getMoveVector(geometryCameraCF), false)
+	if GravityCamera.getMoveVector then
+		self.fake.humanoid:Move(GravityCamera.getMoveVector(geometryCameraCF), false)
+	end
 
-	if GravityCamera.getRotationType() == Enum.RotationType.CameraRelative then
-		local right = GravityCamera.getMoveVector(geometryCameraCF, Vector3.xAxis)
+	if GravityCamera.getRotationType and GravityCamera.getRotationType() == Enum.RotationType.CameraRelative then
+		local right = if GravityCamera.getMoveVector
+			then GravityCamera.getMoveVector(geometryCameraCF, Vector3.xAxis)
+			else Vector3.xAxis
 		local rotation = CFrame.fromMatrix(Vector3.zero, right, Vector3.yAxis)
 		self.fake.alignOrientation.CFrame = rotation
 		self.fake.alignOrientation.Enabled = true
@@ -416,7 +426,7 @@ function WallstickClass.set(self: Wallstick, part: BasePart, normal: Vector3, te
 	self.part = part
 	self.normal = normal
 
-	if self.options.camera.spin then
+	if self.options.camera.spin and GravityCamera.setSpinPart then
 		GravityCamera.setSpinPart(self.part)
 	end
 
