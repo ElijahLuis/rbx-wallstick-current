@@ -1,5 +1,9 @@
 --!strict
-local function patchCameraModule(cameraModule: any)
+
+local function patchCameraModule(playerModuleObject: any)
+	print("[Modifier] GravityCameraModifier running...")
+
+	local cameraModule = playerModuleObject:originalGetCameras() -- keep the original behavior
 	local transitionRate: number = 1
 
 	local upCFrame: CFrame = CFrame.identity
@@ -11,18 +15,15 @@ local function patchCameraModule(cameraModule: any)
 	local prevSpinPart: BasePart = spinPart
 	local prevSpinCFrame: CFrame = spinPart.CFrame
 
-	local UserGameSettings = UserSettings():GetService("UserGameSettings")
 	local RotationUtils = require(game.ReplicatedStorage.Wallstick.RotationUtils)
+	local cameraUtils = require(cameraModule.CameraModule.CameraUtils)
 
 	local function swingTwist(inputCF: CFrame, relativeUnitAxis: Vector3)
 		local axis, theta = inputCF:ToAxisAngle()
 		local w, v = math.cos(theta / 2), math.sin(theta / 2) * axis
-
 		local proj = v:Dot(relativeUnitAxis) * relativeUnitAxis
 		local twist = CFrame.new(0, 0, 0, proj.X, proj.Y, proj.Z, w)
-
 		local swing = inputCF * twist:Inverse()
-
 		return swing, twist
 	end
 
@@ -36,9 +37,7 @@ local function patchCameraModule(cameraModule: any)
 
 	local function calculateSpinStep(_dt: number, inVehicle: boolean)
 		local theta = 0
-		if inVehicle then
-			theta = 0
-		elseif spinPart == prevSpinPart then
+		if not inVehicle and spinPart == prevSpinPart then
 			local rotation = spinPart.CFrame.Rotation
 			local prevRotation = prevSpinCFrame.Rotation
 			local delta = prevRotation:ToObjectSpace(rotation)
@@ -53,15 +52,14 @@ local function patchCameraModule(cameraModule: any)
 		prevSpinCFrame = spinPart.CFrame
 	end
 
-	-- Modify camera controller behavior
-	local cameraUtils = require(cameraModule.CameraModule.CameraUtils)
+	-- Override camera utility methods
 	function cameraUtils.GetAngleBetweenXZVectors(v1: Vector3, v2: Vector3): number
 		v1 = upCFrame:VectorToObjectSpace(v1)
 		v2 = upCFrame:VectorToObjectSpace(v2)
 		return math.atan2(v2.X * v1.Z - v2.Z * v1.X, v2.X * v1.X + v2.Z * v1.Z)
 	end
 
-	-- Override cameraModule methods
+	-- Override camera module methods
 	function cameraModule:GetUpVector()
 		return upVector
 	end
@@ -84,18 +82,28 @@ local function patchCameraModule(cameraModule: any)
 		return transitionRate
 	end
 
-	-- Patch main camera update to include our steps
 	local originalUpdate = cameraModule.Update
 	function cameraModule:Update(dt: number)
 		calculateUpStep(dt)
 		calculateSpinStep(dt, self:ShouldUseVehicleCamera())
 		return originalUpdate(self, dt)
 	end
+
+	-- CRITICAL PATCH
+	-- Override GetCameras to return our patched cameraModule
+	if playerModuleObject.originalGetCameras == nil then
+		playerModuleObject.originalGetCameras = playerModuleObject.GetCameras
+	end
+
+	function playerModuleObject:GetCameras()
+		print("[Modifier] Overridden GetCameras() hit!")
+		return cameraModule
+	end
+
+	print("[Modifier] Patch complete. SetSpinPart =", cameraModule.SetSpinPart)
 end
 
-return function(cameraModule)
-	print("[Modifier] GravityCameraModifier running...")
-	patchCameraModule(cameraModule)
-	print("[Modifier] Patched cameraModule.SetSpinPart =", cameraModule.SetSpinPart)
-	return cameraModule
+return function(playerModuleObject)
+	patchCameraModule(playerModuleObject)
+	return playerModuleObject
 end
