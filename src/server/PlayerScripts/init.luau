@@ -23,6 +23,12 @@ function PlayerScriptsModule.setup()
 	local modifiers = require(patched:WaitForChild("Modifiers")) :: any
 
 	modifiers.add(script.GravityCameraModifier)
+
+	local stub = script:FindFirstChild("TransparencyController")
+	if stub then
+		replaceIfPresent(patched.CameraModule, stub:Clone())
+	end
+
 	PlayerModulePackage.replace(patched)
 
 	local renamedCharacterSounds = script.CharacterSounds:Clone()
