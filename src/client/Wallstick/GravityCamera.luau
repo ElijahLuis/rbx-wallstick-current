@@ -40,7 +40,7 @@ function GravityCamera.getSpinPart(): BasePart
 end
 
 -- Sets the part used for spin calculations
-function GravityCamera.setSpinPart(part: BasePart)
+function GravityCamera.SetSpinPart(part: BasePart)
 	cameraModuleObject:SetSpinPart(part)
 end
 
