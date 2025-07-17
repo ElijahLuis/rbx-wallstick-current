@@ -16,8 +16,13 @@ local function patchCameraModule(playerModuleObject: any)
 	local prevSpinCFrame: CFrame = spinPart.CFrame
 
 	local RotationUtils = require(game.ReplicatedStorage.Wallstick.RotationUtils)
-	local cameraUtils = require(playerModuleObject.CameraModule.CameraUtils)
-	
+	local Players = game:GetService("Players")
+	local localPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+	local cameraUtils = require(localPlayer:WaitForChild("PlayerScripts")
+	:WaitForChild("PlayerModule")
+	:WaitForChild("CameraModule")
+	:WaitForChild("CameraUtils"))
+
 	local function swingTwist(inputCF: CFrame, relativeUnitAxis: Vector3)
 		local axis, theta = inputCF:ToAxisAngle()
 		local w, v = math.cos(theta / 2), math.sin(theta / 2) * axis
@@ -81,6 +86,9 @@ local function patchCameraModule(playerModuleObject: any)
 	function cameraModule:GetTransitionRate(): number
 		return transitionRate
 	end
+	function cameraModule:GetRotationType()
+	return Enum.RotationType.CameraRelative
+end
 
 	local originalUpdate = cameraModule.Update
 	function cameraModule:Update(dt: number)
