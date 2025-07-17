@@ -3,6 +3,6 @@ local GravityCameraModifier = require(game.ReplicatedStorage.Wallstick.GravityCa
 
 return function(PlayerModule)
 	local pm = if typeof(PlayerModule) == "Instance" then require(PlayerModule) else PlayerModule
-	local cameraModule = if pm.GetCameras then pm:GetCameras() else require(pm.CameraModule)
+	local cameraModule = pm:GetCameras()
 	GravityCameraModifier(cameraModule)
 end
