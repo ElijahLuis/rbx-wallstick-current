@@ -1,5 +1,7 @@
 # AGENTSLOG.md  
 _Logbook and quick-reference for previously known issues_
+This file tracks specific errors, workarounds, and gotchas observed during development.  
+If you're an agent (like Codex), check this log **after reading `README.md` and `AGENTS.md`** for runtime-specific issues or patterns.
 
 ## Common Pitfalls
 
@@ -29,6 +31,26 @@ Ignore `Unpatched` unless testing.
 Normal. Only offset + orientation are synced (not full movement).  
 See `Replication.luau` and `GravityManager.luau`.
 ~---~
+### 🔁 "Requested module was required recursively"
+Happens when a module (usually `GravityCameraModifier`) indirectly requires itself or is required too early.
+
+**Cause:**  
+`PlayerModule` is not fully initialized when the modifier runs.
+
+**Fix:**  
+Only apply modifiers *after* confirming `PlayerModule` is a valid table. Defer until `PlayerScriptsLoader` has finished setup.
+~---~
+### 🔧 "TransparencyController:192 - arithmetic on nil"
+Thrown by Roblox's **default** `TransparencyController`, which is still being loaded.
+
+**Cause:**  
+When Wallstick’s patched camera system fails to fully override the default `CameraModule`, Roblox loads its fallback, which expects values you've removed or never defined.
+
+**Fix / Workaround:**  
+- Ensure the **patched** `PlayerModule` loads without errors  
+- Prevent recursive requires in `GravityCameraModifier`  
+- You cannot patch `TransparencyController` directly—safest solution is ensuring it never loads  
+- As a last resort, conditionally disable fallback behavior via input-type checks (advanced)
 
 ## DO NOT ASSUME:
 - `Humanoid:GetState()` is unused  
