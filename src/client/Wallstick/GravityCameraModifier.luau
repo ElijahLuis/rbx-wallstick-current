@@ -16,7 +16,8 @@ local function patchCameraModule(playerModuleObject: any)
 	local prevSpinCFrame: CFrame = spinPart.CFrame
 
 	local RotationUtils = require(game.ReplicatedStorage.Wallstick.RotationUtils)
-	local cameraUtils = require(playerModuleObject.CameraModule.CameraUtils)
+	-- Safest route: move a copy of CameraUtils into your Wallstick folder
+	local cameraUtils = require(game.ReplicatedStorage.Wallstick.CameraUtils)
 	
 	local function swingTwist(inputCF: CFrame, relativeUnitAxis: Vector3)
 		local axis, theta = inputCF:ToAxisAngle()
@@ -81,7 +82,9 @@ local function patchCameraModule(playerModuleObject: any)
 	function cameraModule:GetTransitionRate(): number
 		return transitionRate
 	end
-
+	function cameraModule:GetRotationType()
+	return Enum.RotationType.CameraRelative
+	end
 	local originalUpdate = cameraModule.Update
 	function cameraModule:Update(dt: number)
 		calculateUpStep(dt)
@@ -89,8 +92,7 @@ local function patchCameraModule(playerModuleObject: any)
 		return originalUpdate(self, dt)
 	end
 
-	-- CRITICAL PATCH
-	-- Override GetCameras to return our patched cameraModule
+	-- CRITICAL PATCH: Override GetCameras to return our patched cameraModule
 	if playerModuleObject.originalGetCameras == nil then
 		playerModuleObject.originalGetCameras = playerModuleObject.GetCameras
 	end
