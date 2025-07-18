@@ -16,9 +16,8 @@ local function patchCameraModule(playerModuleObject: any)
 	local prevSpinCFrame: CFrame = spinPart.CFrame
 
 	local RotationUtils = require(game.ReplicatedStorage.Wallstick.RotationUtils)
-	-- Safest route: move a copy of CameraUtils into your Wallstick folder
 	local cameraUtils = require(game.ReplicatedStorage.Wallstick.CameraUtils)
-	
+
 	local function swingTwist(inputCF: CFrame, relativeUnitAxis: Vector3)
 		local axis, theta = inputCF:ToAxisAngle()
 		local w, v = math.cos(theta / 2), math.sin(theta / 2) * axis
@@ -48,6 +47,19 @@ local function patchCameraModule(playerModuleObject: any)
 			local _, twistTheta = twist:ToAxisAngle()
 			theta = math.sign(deltaAxis:Dot(spinAxis)) * twistTheta
 		end
+
+		-- Anti-beyblade
+		if not theta or theta ~= theta or math.abs(theta) > math.pi then
+			theta = 0
+			warn("[Spin Debug] Invalid theta detected, reset to 0")
+		end
+
+		theta = math.clamp(theta, -math.pi / 2, math.pi / 2)
+		print("[Spin Debug] theta (deg):", math.deg(theta))
+
+		-- Optional smoothing
+		-- smoothedTheta = smoothedTheta + (theta - smoothedTheta) * math.clamp(_dt * 5, 0, 1)
+
 		twistCFrame = CFrame.fromEulerAnglesYXZ(0, theta, 0)
 		prevSpinPart = spinPart
 		prevSpinCFrame = spinPart.CFrame
@@ -83,13 +95,17 @@ local function patchCameraModule(playerModuleObject: any)
 		return transitionRate
 	end
 	function cameraModule:GetRotationType()
-	return Enum.RotationType.CameraRelative
+		return Enum.RotationType.CameraRelative
 	end
+-- function cameraModule:GetTwistCFrame()
+--	return twistCFrame
+--	end
 	local originalUpdate = cameraModule.Update
 	function cameraModule:Update(dt: number)
+		local result = originalUpdate(self, dt)
 		calculateUpStep(dt)
 		calculateSpinStep(dt, self:ShouldUseVehicleCamera())
-		return originalUpdate(self, dt)
+		return result
 	end
 
 	-- CRITICAL PATCH: Override GetCameras to return our patched cameraModule
