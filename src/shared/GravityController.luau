@@ -130,12 +130,14 @@ local function findClosestPlanet(planets: Folder, position: Vector3)
 end
 
 function GravityController:isGrounded()
-	local result = workspace:Raycast(self.root.Position, Vector3.new(0, -GROUND_CHECK_DISTANCE, 0), self.rayParams)
+	local down = -self.root.CFrame.UpVector
+	local result = workspace:Raycast(self.root.Position, down * GROUND_CHECK_DISTANCE, self.rayParams)
 	return result ~= nil
 end
 
 function GravityController:isFalling()
-	return self.root.AssemblyLinearVelocity.Y < -0.1 and not self:isGrounded()
+	local down = -self.root.CFrame.UpVector
+	return self.root.AssemblyLinearVelocity:Dot(down) > 0.1 and not self:isGrounded()
 end
 
 function GravityController:isTooFarFromAnyPlanet()
