@@ -45,7 +45,17 @@ function GravityCamera.getRotationType(): Enum.RotationType
 end
 
 function GravityCamera.getMoveVector(cameraCF: CFrame, inputMove: Vector3?): Vector3
-	return controlModuleObject:GetMoveVector()
+	local move = inputMove or controlModuleObject:GetMoveVector()
+
+	-- Apply twistCFrame to movement so it's aligned with camera's rotated space
+	local twist = cameraModuleObject:GetTwistCFrame()
+	move = twist:VectorToWorldSpace(move)
+
+	return move
+end
+
+if move.Magnitude < 0.01 then
+	return Vector3.zero
 end
 
 return GravityCamera
