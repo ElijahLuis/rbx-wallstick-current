@@ -354,6 +354,9 @@ function WallstickClass._stepRenderCharacter(self: Wallstick, _dt: number)
 	then
 		local right = GravityCamera.getMoveVector(geometryCameraCF, Vector3.xAxis)
 		local rotation = CFrame.fromMatrix(Vector3.zero, right, Vector3.yAxis)
+		if GravityCamera.getTwistCFrame then
+			rotation *= GravityCamera.getTwistCFrame()
+		end
 		self.fake.alignOrientation.CFrame = rotation
 		self.fake.alignOrientation.Enabled = true
 	else
