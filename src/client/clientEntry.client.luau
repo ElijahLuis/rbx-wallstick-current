@@ -129,6 +129,15 @@ local function onCharacterAdded(character: Model)
 			local stickNormal = stickPart.CFrame:VectorToObjectSpace(result.Normal)
 
 			wallstick:setAndPivot(stickPart, stickNormal, result.Position)
+		else
+			if humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+				local planetHit = findNearestSurface(Config.STICK_RANGE, true)
+				if planetHit then
+					local planetPart = (planetHit.Instance :: BasePart).AssemblyRootPart
+					local planetNormal = planetPart.CFrame:VectorToObjectSpace(planetHit.Normal)
+					wallstick:setAndPivot(planetPart, planetNormal, planetHit.Position)
+				end
+			end
 		end
 	end)
 

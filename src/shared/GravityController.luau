@@ -241,6 +241,10 @@ function GravityController:update(dt: number)
 		self.force.Enabled = true
 
 		local up = -dir
+		local moveVector = self.humanoid.MoveDirection
+		if moveVector.Magnitude > 0.01 then
+			self.root.CFrame = CFrame.lookAt(rootPos, rootPos + moveVector, up)
+		end
 		local look = self.root.CFrame.LookVector
 		self.orientation.CFrame = CFrame.lookAt(rootPos, rootPos + look, up)
 		self.orientation.Enabled = true
@@ -250,6 +254,10 @@ function GravityController:update(dt: number)
 		self.force.Enabled = true
 
 		local up = -direction
+		local moveVector = self.humanoid.MoveDirection
+		if moveVector.Magnitude > 0.01 then
+			self.root.CFrame = CFrame.lookAt(rootPos, rootPos + moveVector, up)
+		end
 		local look = self.root.CFrame.LookVector
 		self.orientation.CFrame = CFrame.lookAt(rootPos, rootPos + look, up)
 		self.orientation.Enabled = true

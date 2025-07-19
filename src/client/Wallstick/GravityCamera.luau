@@ -47,6 +47,15 @@ end
 function GravityCamera.getMoveVector(cameraCF: CFrame, inputMove: Vector3?, scale: number?): Vector3
 	local move = inputMove or controlModuleObject:GetMoveVector()
 
+	if move.Magnitude > 1e-6 then
+		local humanoid = localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid")
+		if humanoid then
+			move = move.Unit * humanoid.WalkSpeed
+		else
+			move = move.Unit
+		end
+	end
+
 	local _, _, _, r00, r01, r02, _, r11, r12, _, _, r22 = cameraCF:GetComponents()
 	local c, s
 	local q = if r11 >= 0 then 1 else -1

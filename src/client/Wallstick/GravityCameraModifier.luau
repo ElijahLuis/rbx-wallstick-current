@@ -114,6 +114,12 @@ local function patchCameraModule(playerModuleObject: any)
 		local result = originalUpdate(self, dt)
 		calculateUpStep(dt)
 		calculateSpinStep(dt, self:ShouldUseVehicleCamera())
+
+		local camera = workspace.CurrentCamera
+		local baseCF =
+			CFrame.lookAt(camera.CFrame.Position, camera.CFrame.Position + camera.CFrame.LookVector, upVector)
+		camera.CFrame = twistCFrame * baseCF
+
 		return result
 	end
 
