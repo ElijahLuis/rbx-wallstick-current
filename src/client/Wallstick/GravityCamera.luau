@@ -44,20 +44,48 @@ function GravityCamera.getRotationType(): Enum.RotationType
 	return cameraModuleObject:GetRotationType()
 end
 
-function GravityCamera.getMoveVector(cameraCF: CFrame, inputMove: Vector3?): Vector3
-	local rawMove = inputMove or controlModuleObject:GetMoveVector()
-	if not rawMove then
-		return Vector3.zero
+function GravityCamera.getMoveVector(cameraCF: CFrame, inputMove: Vector3?, scale: number?): Vector3
+	local move = inputMove or controlModuleObject:GetMoveVector()
+
+	if move.Magnitude > 1e-6 then
+		local humanoid = localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid")
+		if humanoid then
+			move = move.Unit * humanoid.WalkSpeed
+		else
+			move = move.Unit
+		end
 	end
 
-	local twist = cameraModuleObject:GetTwistCFrame()
-	local move = twist:VectorToWorldSpace(rawMove)
+	local _, _, _, r00, r01, r02, _, r11, r12, _, _, r22 = cameraCF:GetComponents()
+	local c, s
+	local q = if r11 >= 0 then 1 else -1
 
-	if move.Magnitude < 0.01 then
-		return Vector3.zero
+	if r12 < 1 and r12 > -1 then
+		c = r22
+		s = r02
+	else
+		c = r00
+		s = -r01 * math.sign(r12)
 	end
 
-	return move
+	local norm = math.sqrt(c * c + s * s)
+	if norm < 1e-6 then
+		return move
+	end
+
+	local x = (c * move.X * q + s * move.Z) / norm
+	local z = (c * move.Z - s * move.X * q) / norm
+	local result = Vector3.new(x, 0, z)
+
+	if scale then
+		result *= scale
+	end
+
+	return result
+end
+
+function GravityCamera.getTwistCFrame(): CFrame
+	return cameraModuleObject:GetTwistCFrame()
 end
 
 return GravityCamera

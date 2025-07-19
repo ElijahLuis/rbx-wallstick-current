@@ -66,8 +66,6 @@ local function patchCameraModule(playerModuleObject: any)
 		print("[Spin Debug] theta (deg):", math.deg(smoothedTheta))
 
 		twistCFrame = CFrame.fromEulerAnglesYXZ(0, smoothedTheta, 0)
-		workspace.CurrentCamera.CFrame = twistCFrame * workspace.CurrentCamera.CFrame
-
 		prevSpinPart = spinPart
 		prevSpinCFrame = spinPart.CFrame
 	end
@@ -94,6 +92,8 @@ local function patchCameraModule(playerModuleObject: any)
 	end
 	function cameraModule:SetSpinPart(part: BasePart)
 		spinPart = part
+		prevSpinPart = part
+		prevSpinCFrame = part.CFrame
 	end
 	function cameraModule:SetTransitionRate(rate: number)
 		transitionRate = rate
@@ -113,6 +113,12 @@ local function patchCameraModule(playerModuleObject: any)
 		local result = originalUpdate(self, dt)
 		calculateUpStep(dt)
 		calculateSpinStep(dt, self:ShouldUseVehicleCamera())
+
+		local camera = workspace.CurrentCamera
+		local baseCF =
+			CFrame.lookAt(camera.CFrame.Position, camera.CFrame.Position + camera.CFrame.LookVector, upVector)
+		camera.CFrame = twistCFrame * baseCF
+
 		return result
 	end
 
