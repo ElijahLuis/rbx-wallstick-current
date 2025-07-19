@@ -63,9 +63,15 @@ local function patchCameraModule(playerModuleObject: any)
 
 		-- Smooth theta change to prevent spin
 		smoothedTheta = smoothedTheta + (theta - smoothedTheta) * math.clamp(_dt * 10, 0, 1)
-		print("[Spin Debug] theta (deg):", math.deg(smoothedTheta))
+		print("[SpinActive] Updating spin with theta =", math.deg(theta), "smoothed =", math.deg(smoothedTheta))
 
-		twistCFrame = CFrame.fromEulerAnglesYXZ(0, smoothedTheta, 0)
+		local camera = workspace.CurrentCamera
+		local baseCF =
+			CFrame.lookAt(camera.CFrame.Position, camera.CFrame.Position + camera.CFrame.LookVector, upVector)
+		camera.CFrame = baseCF * CFrame.Angles(0, smoothedTheta, 0)
+		twistCFrame = CFrame.Angles(0, smoothedTheta, 0)
+		print("[CamPos]", camera.CFrame.Position, "[Look]", camera.CFrame.LookVector)
+
 		prevSpinPart = spinPart
 		prevSpinCFrame = spinPart.CFrame
 	end
@@ -113,12 +119,6 @@ local function patchCameraModule(playerModuleObject: any)
 		local result = originalUpdate(self, dt)
 		calculateUpStep(dt)
 		calculateSpinStep(dt, self:ShouldUseVehicleCamera())
-
-		local camera = workspace.CurrentCamera
-		local baseCF =
-			CFrame.lookAt(camera.CFrame.Position, camera.CFrame.Position + camera.CFrame.LookVector, upVector)
-		camera.CFrame = twistCFrame * baseCF
-
 		return result
 	end
 
