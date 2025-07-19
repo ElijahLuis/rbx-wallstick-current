@@ -5,6 +5,7 @@ local function patchCameraModule(playerModuleObject: any)
 
 	local cameraModule = playerModuleObject:GetCameras()
 	local transitionRate: number = 1
+	local smoothedTheta: number = 0
 
 	local upCFrame: CFrame = CFrame.identity
 	local upVector: Vector3 = upCFrame.YVector
@@ -37,6 +38,7 @@ local function patchCameraModule(playerModuleObject: any)
 
 	local function calculateSpinStep(_dt: number, inVehicle: boolean)
 		local theta = 0
+
 		if not inVehicle and spinPart == prevSpinPart then
 			local rotation = spinPart.CFrame.Rotation
 			local prevRotation = prevSpinCFrame.Rotation
@@ -48,19 +50,23 @@ local function patchCameraModule(playerModuleObject: any)
 			theta = math.sign(deltaAxis:Dot(spinAxis)) * twistTheta
 		end
 
-		-- Anti-beyblade
 		if not theta or theta ~= theta or math.abs(theta) > math.pi then
 			theta = 0
 			warn("[Spin Debug] Invalid theta detected, reset to 0")
 		end
 
-		theta = math.clamp(theta, -math.pi / 2, math.pi / 2)
-		print("[Spin Debug] theta (deg):", math.deg(theta))
+		-- Optional: force reset if large snap
+		if math.abs(theta - smoothedTheta) > math.rad(180) then
+			print("[Spin Debug] Snap correction applied")
+			smoothedTheta = theta
+		end
 
-		-- Optional smoothing
-		-- smoothedTheta = smoothedTheta + (theta - smoothedTheta) * math.clamp(_dt * 5, 0, 1)
+		-- Smooth theta change to prevent spin
+		smoothedTheta = smoothedTheta + (theta - smoothedTheta) * math.clamp(_dt * 10, 0, 1)
+		print("[Spin Debug] theta (deg):", math.deg(smoothedTheta))
 
-		twistCFrame = CFrame.fromEulerAnglesYXZ(0, theta, 0)
+		twistCFrame = CFrame.fromEulerAnglesYXZ(0, smoothedTheta, 0)
+
 		prevSpinPart = spinPart
 		prevSpinCFrame = spinPart.CFrame
 	end
@@ -97,9 +103,10 @@ local function patchCameraModule(playerModuleObject: any)
 	function cameraModule:GetRotationType()
 		return Enum.RotationType.CameraRelative
 	end
--- function cameraModule:GetTwistCFrame()
---	return twistCFrame
---	end
+	function cameraModule:GetTwistCFrame()
+		return twistCFrame
+	end
+
 	local originalUpdate = cameraModule.Update
 	function cameraModule:Update(dt: number)
 		local result = originalUpdate(self, dt)
