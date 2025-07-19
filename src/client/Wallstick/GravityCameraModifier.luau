@@ -66,6 +66,7 @@ local function patchCameraModule(playerModuleObject: any)
 		print("[Spin Debug] theta (deg):", math.deg(smoothedTheta))
 
 		twistCFrame = CFrame.fromEulerAnglesYXZ(0, smoothedTheta, 0)
+		workspace.CurrentCamera.CFrame = twistCFrame * workspace.CurrentCamera.CFrame
 
 		prevSpinPart = spinPart
 		prevSpinCFrame = spinPart.CFrame
