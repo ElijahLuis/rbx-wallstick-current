@@ -3,6 +3,10 @@
 local function patchCameraModule(playerModuleObject: any)
 	print("[Modifier] GravityCameraModifier running...")
 
+	local Players = game:GetService("Players")
+	local localPlayer = Players.LocalPlayer
+	local Camera = workspace.CurrentCamera
+
 	local cameraModule = playerModuleObject:GetCameras()
 	local transitionRate: number = 1
 	local smoothedTheta: number = 0
@@ -65,12 +69,18 @@ local function patchCameraModule(playerModuleObject: any)
 		smoothedTheta = smoothedTheta + (theta - smoothedTheta) * math.clamp(_dt * 10, 0, 1)
 		print("[SpinActive] Updating spin with theta =", math.deg(theta), "smoothed =", math.deg(smoothedTheta))
 
-		local camera = workspace.CurrentCamera
-		local baseCF =
-			CFrame.lookAt(camera.CFrame.Position, camera.CFrame.Position + camera.CFrame.LookVector, upVector)
-		camera.CFrame = baseCF * CFrame.Angles(0, smoothedTheta, 0)
+		local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+		local hrp = character:FindFirstChild("HumanoidRootPart")
+
+		if hrp then
+			local forward = hrp.CFrame.LookVector
+			local baseCF = CFrame.lookAt(Camera.CFrame.Position, Camera.CFrame.Position + forward, upVector)
+			Camera.CFrame = baseCF * CFrame.Angles(0, theta, 0)
+			print("[CamPos]", Camera.CFrame.Position, "[Look]", Camera.CFrame.LookVector)
+		end
+
+		print("[Spin Debug] theta (deg):", math.deg(theta))
 		twistCFrame = CFrame.Angles(0, smoothedTheta, 0)
-		print("[CamPos]", camera.CFrame.Position, "[Look]", camera.CFrame.LookVector)
 
 		prevSpinPart = spinPart
 		prevSpinCFrame = spinPart.CFrame
